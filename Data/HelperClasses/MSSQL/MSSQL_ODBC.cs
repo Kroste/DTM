@@ -1,11 +1,11 @@
+using System.Data;
+using System.Data.Odbc;
+using System.Text;
+using DTM.ODBC;
+using NLog;
+
 namespace DTM.MSSQL
 {
-    using System.Data;
-    using System.Data.Odbc;
-    using System.Text;
-    using DTM.ODBC;
-    using NLog;
-
     public class MSSQL_ODBC : IDisposable, IDTM_ODBC
     {
         private ServerCredential cred { get; set; }

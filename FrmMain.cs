@@ -1,9 +1,6 @@
+using NLog;
 namespace DTM
 {
-
-    using System.Windows.Forms;
-    using NLog;
-
     public partial class Main_Form : Form
     {
         private IDTM_FORM dtm_form;

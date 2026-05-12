@@ -1,10 +1,9 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json.Serialization;
 namespace DTM.ORACLE
 {
-    using System.Net.Http.Headers;
-    using System.Net.Http.Json;
-    using System.Text;
-    using System.Text.Json.Serialization;
-  
     public class REST : IDisposable
     {
         private readonly HttpClient _http;

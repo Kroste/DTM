@@ -1,5 +1,6 @@
-namespace DTM;
- public enum Database_Status
+namespace DTM
+{
+    public enum Database_Status
     {
         down,
         up,
@@ -13,3 +14,4 @@ namespace DTM;
         public required Database_Status Status { get; init; }
 
     }
+}

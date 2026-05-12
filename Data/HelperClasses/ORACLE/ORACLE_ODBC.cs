@@ -6,7 +6,6 @@ using DTM.ODBC;
 using DTM.Util;
 using NLog;
 
-
 namespace DTM.ORACLE
 {
 
@@ -44,7 +43,7 @@ namespace DTM.ORACLE
             }
             catch (Exception ex)
             {
-                _logger.Warn(ex.StackTrace);
+                _logger.Warn(ex.StackTrace!);
                 return new List<Database_Info>(0);
             }
 
@@ -62,7 +61,7 @@ namespace DTM.ORACLE
                 Tablespaces = new List<Tablespace>()
             };
 
-            var lines = ExecuteRemoteSqlScript(database.FQDN, OracleStatsSql);
+            var lines = ExecuteRemoteSqlScript(database.FQDN!, OracleStatsSql);
 
             if (lines.Length == 0)
             {

@@ -1,26 +1,27 @@
-namespace DTM;
-
 using NLog;
-static class Program
+namespace DTM
 {
-
-    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-    /// <summary>
-    ///  The main entry point for the application.
-    /// </summary>
-    [STAThread]
-    static void Main()
+    static class Program
     {
-        // To customize application configuration such as set high DPI settings or default font,
-        // see https://aka.ms/applicationconfiguration.
-        try
+
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+        /// <summary>
+        ///  The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
         {
-            ApplicationConfiguration.Initialize();
-            Application.Run(new Main_Form());
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex);
+            // To customize application configuration such as set high DPI settings or default font,
+            // see https://aka.ms/applicationconfiguration.
+            try
+            {
+                ApplicationConfiguration.Initialize();
+                Application.Run(new Main_Form());
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex);
+            }
         }
     }
 }
