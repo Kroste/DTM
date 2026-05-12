@@ -17,5 +17,15 @@ namespace DTM
         {
             return ODBC_Factory.Get_DATA(serverTyp.ToString(), db_Servers.FirstOrDefault(x => x.Key == serverTyp).Value.serverCredential!)!.GetDatabase_Stats(database);
         }
+
+        public bool Backup_Database(DB_SERVER.ServerTyp serverTyp, Database_Info Database, DateTime backupTime)
+        {
+            return ODBC_Factory.Get_DATA(serverTyp.ToString(), db_Servers.FirstOrDefault(x => x.Key == serverTyp).Value.serverCredential!)!.Backup_Database(Database, backupTime);
+        }
+
+        public bool Clone_Database(DB_SERVER.ServerTyp serverTyp, Database_Info Database, DateTime cloneTime)
+        {
+            return ODBC_Factory.Get_DATA(serverTyp.ToString(), db_Servers.FirstOrDefault(x => x.Key == serverTyp).Value.serverCredential!)!.Clone_Database(Database, cloneTime);
+        }
     }
 }

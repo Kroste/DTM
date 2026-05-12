@@ -39,7 +39,7 @@ namespace DTM.ORACLE
                     FQDN = x.Fqdn,
                     Status = string.Equals(x.Status, "up", StringComparison.OrdinalIgnoreCase) ? Database_Status.up : Database_Status.down,
                     Id = x.Id
-                }).Where(x=> !x.Name.StartsWith("TPL") && !x.Name.Contains("DBMANAGER")).OrderBy(x=> x.FQDN).ToList();
+                }).Where(x => !x.Name.StartsWith("TPL") && !x.Name.Contains("DBMANAGER")).OrderBy(x => x.FQDN).ToList();
             }
             catch (Exception ex)
             {
@@ -47,6 +47,41 @@ namespace DTM.ORACLE
                 return new List<Database_Info>(0);
             }
         }
+
+        public bool Backup_Database(Database_Info Database, DateTime backupTime)
+        {
+            string schedulerCommand = "/mnt/dbmgmt/scripts/run-generic-export.sh";
+
+            if (backupTime > DateTime.Now)
+            {
+                schedulerCommand = $"echo \"{schedulerCommand}\" | at {backupTime:HH:mm} {backupTime:dd.MM.yyyy}";
+            }
+
+            ExecuteRemoteSqlScript(Database.FQDN!, schedulerCommand);
+            return true;
+        }
+
+        public bool Clone_Database(Database_Info Database, DateTime cloneTime)
+        {
+            string schedulerCommand = string.Empty;
+
+            if (cloneTime > DateTime.Now)
+            {
+                string atTime = cloneTime.ToString("HH:mm dd.MM.yyyy");
+                schedulerCommand = "clone=$(ls -t /home/oracle/scripts/clone* | head -n1) && ";
+                schedulerCommand += $"if [[ -z \"$clone\" ]]; then echo \"kein Clone Script gefunden\"; else echo \"$clone\" | at {atTime}; fi";
+            }
+            else
+            {
+                schedulerCommand = "clone=$(ls -t /home/oracle/scripts/clone* | head -n1) && ";
+                schedulerCommand += "if [[ -z \"$clone\" ]]; then echo \"kein Clone Script gefunden\"; else echo \"$clone\"; fi";
+            }
+
+            if (string.IsNullOrWhiteSpace(schedulerCommand))
+                ExecuteRemoteSqlScript(Database.FQDN!, schedulerCommand);
+            return true;
+        }
+
 
         public Database_Stats GetDatabase_Stats(Database_Info database)
         {
@@ -131,6 +166,8 @@ namespace DTM.ORACLE
                 throw new ArgumentException("DatabaseName darf nicht leer sein.", nameof(databaseName));
             if (string.IsNullOrWhiteSpace(remoteCmd))
                 throw new ArgumentException("SqlScript darf nicht leer sein.", nameof(remoteCmd));
+
+            _logger.Debug($"Führe Remote-SQL auf oracle@{databaseName} aus: {remoteCmd}");
 
             var psi = new ProcessStartInfo
             {

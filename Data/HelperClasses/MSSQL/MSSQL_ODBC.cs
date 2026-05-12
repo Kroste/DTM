@@ -279,5 +279,15 @@ namespace DTM.MSSQL
 
             return get_Rows(sql.ToString());
         }
+
+        public bool Backup_Database(Database_Info Database, DateTime backupTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Clone_Database(Database_Info Database, DateTime backupTime)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

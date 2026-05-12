@@ -20,8 +20,19 @@ namespace DTM
             {                
                 frmSessions.ShowDialog();
             };
+
+            btnBackup.Click+= btnBackup_Click!;
         }
 
+        private void btnBackup_Click(object sender, EventArgs e)
+        {
+            using FrmTimePicker timePicker = new FrmTimePicker();
+            if (timePicker.ShowDialog() == DialogResult.OK)
+            {
+                DateTime selectedTime = timePicker.GetDateTime();
+                dtm_form.Backup_Database(selectedTime);
+            }
+        }
 
         private void mainView_AfterSelect(object sender, TreeViewEventArgs e)
         {
@@ -37,6 +48,7 @@ namespace DTM
 
                 if (_statsMSSQL != null)
                 {
+                    btnBackup.Text = "Backup";
                     lblDbName.Text = $"Datenbank: {_statsMSSQL.Name ?? "—"}";
                     lblDbHost.Text = $"Host: {_statsMSSQL.Server}" ?? "—";
                     lblDbStatus.Text = $"Status: {_statsMSSQL.State}" ?? "—";
@@ -53,6 +65,7 @@ namespace DTM
 
                 if (_statsOracle != null)
                 {
+                    btnBackup.Text = "Dump";
                     lblDbName.Text = $"Instance: {_statsOracle.InstanceName ?? "—"}";
                     lblDbHost.Text = $"Host: {_statsOracle.Server}" ?? "—";
                     lblDbStatus.Text = $"Status: {_statsOracle.State}" ?? "—";

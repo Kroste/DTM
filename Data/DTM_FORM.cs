@@ -79,6 +79,40 @@ namespace DTM
             return null;
         }
 
+        public bool Backup_Database(DateTime backupTime)
+        {
+            cTreeViewNodeDatabase? childNode = mainView.SelectedNode as cTreeViewNodeDatabase;
+
+            if (childNode != null)
+            {
+                cTreeViewNodeParent? parentNode = mainView.SelectedNode?.Parent as cTreeViewNodeParent;
+
+                if (parentNode != null)
+                {                 
+                    _data.Backup_Database(parentNode.ServerTyp, childNode.Database, backupTime);
+                       _logger.Info($"Backup für {childNode.Database.Name} um {backupTime} gestartet.");
+                }
+            }
+            return true;
+        }
+
+        public bool Clone_Database(DateTime cloneTime)
+        {
+            cTreeViewNodeDatabase? childNode = mainView.SelectedNode as cTreeViewNodeDatabase;
+
+            if (childNode != null)
+            {
+                cTreeViewNodeParent? parentNode = mainView.SelectedNode?.Parent as cTreeViewNodeParent;
+
+                if (parentNode != null)
+                {                                     
+                    _data.Clone_Database(parentNode.ServerTyp, childNode.Database, cloneTime);
+                    _logger.Info($"Klonen der Datenbank {childNode.Database.Name} um {cloneTime} gestartet.");
+                }
+            }
+            return true;
+        }
+
         public void Dispose()
         {
         }
