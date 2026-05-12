@@ -39,7 +39,7 @@ namespace DTM.ORACLE
                     FQDN = x.Fqdn,
                     Status = string.Equals(x.Status, "up", StringComparison.OrdinalIgnoreCase) ? Database_Status.up : Database_Status.down,
                     Id = x.Id
-                }).Where(x=> !x.Name.StartsWith("TPL")).ToList();
+                }).Where(x=> !x.Name.StartsWith("TPL") && !x.Name.Contains("DBMANAGER")).OrderBy(x=> x.FQDN).ToList();
             }
             catch (Exception ex)
             {

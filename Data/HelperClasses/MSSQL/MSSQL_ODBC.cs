@@ -95,7 +95,7 @@ namespace DTM.MSSQL
                         StringComparison.OrdinalIgnoreCase)
                     ? Database_Status.up
                     : Database_Status.down
-       })
+       }).OrderBy(db => db.Name)
        .ToList();
         }
 
