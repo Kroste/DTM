@@ -1,10 +1,10 @@
 using NLog;
-using System.Collections.Generic;
 namespace DTM
 {
     public partial class Main_Form : Form
     {
         private IDTM_FORM dtm_form;
+        private FrmSessions frmSessions = new FrmSessions();
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
         public Main_Form()
         {
@@ -16,6 +16,10 @@ namespace DTM
                 { DB_SERVER.ServerTyp.ORACLE, new DB_SERVER(new ServerCredential(User:"lars@internal",Password:"London22Hga28f", Server:"olvm-mgmt.lhp.intern")) }
             };
             dtm_form = new DTM_FORM(dB_SERVERs, mainView);
+            lbActiveSessions.Click+= (s, e) =>
+            {                
+                frmSessions.ShowDialog();
+            };
         }
 
 
@@ -40,7 +44,7 @@ namespace DTM
                     lblDbSize.Text = $"Größe: {_statsMSSQL.DataSizeMB} MB" ?? "—";
                     lbRecoveryModel.Text = $"RecoveryModel: {_statsMSSQL.RecorveryModel}" ?? "—";
                     lbActiveSessions.Text = $"Aktive Sessions: {_statsMSSQL.Sessions?.Count()}" ?? "—";
-
+                    frmSessions.SetSessionsData(_statsMSSQL.Sessions ?? new List<Session>());
                     tabPowerShell.Focus();
                 }
 
@@ -49,14 +53,14 @@ namespace DTM
 
                 if (_statsOracle != null)
                 {
-                    lblDbName.Text = $"Instance: {_statsOracle.InstanceName?? "—"}";
+                    lblDbName.Text = $"Instance: {_statsOracle.InstanceName ?? "—"}";
                     lblDbHost.Text = $"Host: {_statsOracle.Server}" ?? "—";
                     lblDbStatus.Text = $"Status: {_statsOracle.State}" ?? "—";
                     lblDbVersion.Text = $"Version: {_statsOracle.OracleVersion}" ?? "—";
                     lblDbSize.Text = $"Größe: {_statsOracle.DataSizeMB} MB" ?? "—";
                     lbRecoveryModel.Text = $"ArchiveLog: {_statsOracle.ArchiveLogMode}" ?? "—";
                     lbActiveSessions.Text = $"Aktive Sessions: {_statsOracle.Sessions?.Count()}" ?? "—";
-
+                    frmSessions.SetSessionsData(_statsOracle.Sessions ?? new List<Session>());
                     tabSsh.Focus();
                 }
             }
