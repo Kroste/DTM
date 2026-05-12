@@ -1,0 +1,63 @@
+## ============================================
+## .gitignore für Visual Studio / .NET (C#)
+## ============================================
+
+# --- Visual Studio Cache / Optionen ---
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# --- Build-Ergebnisse ---
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+[Oo]ut/
+
+# --- NuGet ---
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# --- .NET Core / .NET 5+ ---
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# --- Test-Ergebnisse ---
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# --- ReSharper / Rider (falls jemand im Team das nutzt) ---
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+.idea/
+
+# --- Roslyn / Compiler ---
+*.pdb
+*.dll
+*.exe
+# Hinwei
