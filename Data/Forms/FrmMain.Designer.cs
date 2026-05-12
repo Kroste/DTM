@@ -95,7 +95,7 @@ namespace DTM
             lblDbStatus = MakeLabel("Status: —", 11f, FontStyle.Regular, new Point(15, 85));
             lblDbVersion = MakeLabel("Version: —", 11f, FontStyle.Regular, new Point(15, 110));
             lblDbSize = MakeLabel("Größe: —", 11f, FontStyle.Regular, new Point(15, 135));
-            lbRecoveryModel = MakeLabel("Wiederherstellungsmodell: —", 11f, FontStyle.Regular, new Point(15, 160));
+            lbRecoveryModel = MakeLabel("RecoveryModel: —", 11f, FontStyle.Regular, new Point(15, 160));
             lbActiveSessions = MakeLabel("Aktive Sessions: —", 11f, FontStyle.Regular, new Point(15, 185));
 
             infoPanel.Controls.AddRange(new Control[]
