@@ -39,14 +39,13 @@ namespace DTM.ORACLE
                     FQDN = x.Fqdn,
                     Status = string.Equals(x.Status, "up", StringComparison.OrdinalIgnoreCase) ? Database_Status.up : Database_Status.down,
                     Id = x.Id
-                }).ToList();
+                }).Where(x=> !x.Name.StartsWith("TPL")).ToList();
             }
             catch (Exception ex)
             {
                 _logger.Warn(ex.StackTrace!);
                 return new List<Database_Info>(0);
             }
-
         }
 
         public Database_Stats GetDatabase_Stats(Database_Info database)
@@ -60,8 +59,9 @@ namespace DTM.ORACLE
                 Sessions = new List<Session>(),
                 Tablespaces = new List<Tablespace>()
             };
-
-            var lines = ExecuteRemoteSqlScript(database.FQDN!, OracleStatsSql);
+            var sqlB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(OracleStatsSql));
+            var remoteCmd = $"echo '{sqlB64}' | base64 -d | sqlplus -s / as sysdba";
+            var lines = ExecuteRemoteSqlScript(database.FQDN!, remoteCmd);
 
             if (lines.Length == 0)
             {
@@ -125,15 +125,12 @@ namespace DTM.ORACLE
             EXIT;
         ";
 
-        public string[] ExecuteRemoteSqlScript(string databaseName, string sqlScript)
+        public string[] ExecuteRemoteSqlScript(string databaseName, string remoteCmd)
         {
             if (string.IsNullOrWhiteSpace(databaseName))
                 throw new ArgumentException("DatabaseName darf nicht leer sein.", nameof(databaseName));
-            if (string.IsNullOrWhiteSpace(sqlScript))
-                throw new ArgumentException("SqlScript darf nicht leer sein.", nameof(sqlScript));
-
-            var sqlB64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(sqlScript));
-            var remoteCmd = $"echo '{sqlB64}' | base64 -d | sqlplus -s / as sysdba";
+            if (string.IsNullOrWhiteSpace(remoteCmd))
+                throw new ArgumentException("SqlScript darf nicht leer sein.", nameof(remoteCmd));
 
             var psi = new ProcessStartInfo
             {
@@ -191,8 +188,7 @@ namespace DTM.ORACLE
                     return Array.Empty<string>();
                 }
 
-                return stdout.ToString()
-                             .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                return stdout.ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
             }
             catch (Exception ex)
             {
