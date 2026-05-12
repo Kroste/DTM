@@ -23,7 +23,7 @@ namespace DTM
         private Label lblDbVersion = null!;
         private Label lblDbSize = null!;
         private Label lbRecoveryModel = null!;
-        private Label lbActiveSessions = null!;
+        private LinkLabel lbActiveSessions = null!;
 
         // Action-Buttons
         private FlowLayoutPanel actionPanel = null!;
@@ -96,7 +96,7 @@ namespace DTM
             lblDbVersion = MakeLabel("Version: —", 11f, FontStyle.Regular, new Point(15, 110));
             lblDbSize = MakeLabel("Größe: —", 11f, FontStyle.Regular, new Point(15, 135));
             lbRecoveryModel = MakeLabel("RecoveryModel: —", 11f, FontStyle.Regular, new Point(15, 160));
-            lbActiveSessions = MakeLabel("Aktive Sessions: —", 11f, FontStyle.Regular, new Point(15, 185));
+            lbActiveSessions = MakeLinkLabel("Aktive Sessions: —", 11f, FontStyle.Regular, new Point(15, 185));
 
             infoPanel.Controls.AddRange(new Control[]
                 { lblDbName, lblDbHost, lblDbStatus, lblDbVersion, lblDbSize, lbRecoveryModel, lbActiveSessions });
@@ -217,6 +217,13 @@ namespace DTM
         // === Helper ===
 
         private static Label MakeLabel(string text, float size, FontStyle style, Point loc) => new()
+        {
+            Text = text,
+            AutoSize = true,
+            Location = loc,
+            Font = new Font("Segoe UI", size, style)
+        };
+         private static LinkLabel MakeLinkLabel(string text, float size, FontStyle style, Point loc) => new()
         {
             Text = text,
             AutoSize = true,
