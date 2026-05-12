@@ -1,4 +1,5 @@
 using NLog;
+using System.Collections.Generic;
 namespace DTM
 {
     public partial class Main_Form : Form
@@ -37,6 +38,8 @@ namespace DTM
                     lblDbStatus.Text = $"Status: {_statsMSSQL.State}" ?? "—";
                     lblDbVersion.Text = $"Comp. Lvl.: {_statsMSSQL.CompatibllityLevel}" ?? "—";
                     lblDbSize.Text = $"Größe: {_statsMSSQL.DataSizeMB} MB" ?? "—";
+                    lbRecoveryModel.Text = $"RecoveryModel: {_statsMSSQL.RecorveryModel}" ?? "—";
+                    lbActiveSessions.Text = $"Aktive Sessions: {_statsMSSQL.Sessions?.Count()}" ?? "—";
 
                     tabPowerShell.Focus();
                 }
@@ -46,11 +49,13 @@ namespace DTM
 
                 if (_statsOracle != null)
                 {
-                    lblDbName.Text = $"Datenbank: {_statsOracle.Name ?? "—"}";
+                    lblDbName.Text = $"Instance: {_statsOracle.InstanceName?? "—"}";
                     lblDbHost.Text = $"Host: {_statsOracle.Server}" ?? "—";
                     lblDbStatus.Text = $"Status: {_statsOracle.State}" ?? "—";
                     lblDbVersion.Text = $"Version: {_statsOracle.OracleVersion}" ?? "—";
                     lblDbSize.Text = $"Größe: {_statsOracle.DataSizeMB} MB" ?? "—";
+                    lbRecoveryModel.Text = $"ArchiveLog: {_statsOracle.ArchiveLogMode}" ?? "—";
+                    lbActiveSessions.Text = $"Aktive Sessions: {_statsOracle.Sessions?.Count()}" ?? "—";
 
                     tabSsh.Focus();
                 }
