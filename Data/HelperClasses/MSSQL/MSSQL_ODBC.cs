@@ -82,7 +82,7 @@ namespace DTM.MSSQL
         public List<Database_Info> get_Datenbank_Names()
         {
             return get_Rows(
-           "SELECT [name], database_id, state_desc, '' AS [FQDN] FROM sys.databases")
+           "SELECT [name], database_id, state_desc, '' AS [FQDN] FROM sys.databases WHERE database_id > 4")
        .AsEnumerable()
        .Select(r => new Database_Info
        {
