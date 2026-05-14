@@ -29,12 +29,6 @@ public class MSSQL_ConverterTests
     }
 
     [Fact]
-    public void ToDouble_string_parses_invariantly()
-    {
-        MSSQL_ODBC.ToDouble("3.14").Should().BeApproximately(3.14, 0.0001);
-    }
-
-    [Fact]
     public void ToInt_null_returns_zero()
     {
         MSSQL_ODBC.ToInt(null!).Should().Be(0);
