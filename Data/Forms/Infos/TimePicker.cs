@@ -3,7 +3,15 @@ namespace DTM
 {
     public class FrmTimePicker : Form
     {
-        private DateTimePicker? dateTimePicker = null!;
+        private readonly DateTimePicker dateTimePicker = new()
+        {
+            Dock = DockStyle.Fill,
+            Format = DateTimePickerFormat.Custom,
+            CustomFormat = "dddd.MMMM.yyyy HH:mm",
+            ShowUpDown = false,
+            MinDate = DateTime.Now,
+            Value = DateTime.Now
+        };
         private Button? btnOK = null!;
         private Button? btnCancel = null!;
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
@@ -21,25 +29,17 @@ namespace DTM
         private
         void InitializeComponent()
         {
-            this.SuspendLayout();
+            SuspendLayout();
             // 
             // FrmTimePicker
             // 
-            this.ClientSize = new System.Drawing.Size(250, 100);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.Name = "TimePicker";
-            this.Text = "TimePicker";
-            this.ResumeLayout(false);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            dateTimePicker = new DateTimePicker
-            {
-                Dock = DockStyle.Fill,
-                Format = DateTimePickerFormat.Custom,
-                CustomFormat = "dddd.MMMM.yyyy HH:mm",
-                ShowUpDown = false,
-                MinDate = DateTime.Now,
-                Value = DateTime.Now
-            };
+            ClientSize = new Size(250, 100);
+            StartPosition = FormStartPosition.CenterParent;
+            Name = "TimePicker";
+            Text = "TimePicker";
+            ResumeLayout(false);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+
             Controls.Add(dateTimePicker);
 
             btnOK = new Button
@@ -48,7 +48,7 @@ namespace DTM
                 DialogResult = DialogResult.OK,
                 Dock = DockStyle.Bottom,
                 Location = new Point(30, 60),
-                Size = new Size(20, 30)                
+                Size = new Size(20, 30)
             };
 
             btnCancel = new Button
@@ -61,14 +61,15 @@ namespace DTM
             };
 
             AcceptButton = btnOK;
-            CancelButton = btnCancel;   
+            CancelButton = btnCancel;
             Controls.Add(btnOK);
             Controls.Add(btnCancel);
         }
 
         public DateTime GetDateTime()
         {
-            return dateTimePicker.Value;
+            _logger.Debug($"FrmTimePicker Zeit abgerufen:{dateTimePicker!.Value}.");
+            return dateTimePicker!.Value;
         }
     }
 }

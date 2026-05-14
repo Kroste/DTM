@@ -1,17 +1,10 @@
 namespace DTM
 {
-    public class ServerCredential
+    public class ServerCredential(string Server = "FOC-SQL01", string User = "", string Password = "", string Datenbank = "Master")
     {
-        public string Server { get; set; }
-        public string User { get; set; }
-        public string Password { get; set; }
-        public string Datenbank { get; set; }
-        public ServerCredential(string Server = "FOC-SQL01", string User = "", string Password = "", string Datenbank = "Master")
-        {
-            this.Server = Server;
-            this.Password = Password;
-            this.User = User;
-            this.Datenbank = Datenbank;
-        }
+        public string Server { get; set; } = Server;
+        public string User { get; set; } = User;
+        public string Password { get; set; } = Password;
+        public string Datenbank { get; set; } = Datenbank;
     }
 }

@@ -6,21 +6,15 @@ using NLog;
 
 namespace DTM.MSSQL
 {
-    public class MSSQL_ODBC : IDisposable, IDTM_ODBC
+    public class MSSQL_ODBC(ServerCredential credential) : IDisposable, IDTM_ODBC
     {
-        private ServerCredential cred { get; set; }
-        private OdbcConnection conn { get; set; }
+        private ServerCredential Credential { get; set; } = credential;
+        private OdbcConnection Connection { get; set; } = new OdbcConnection();
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-
-        public MSSQL_ODBC(ServerCredential credential)
-        {
-            this.cred = credential;
-            conn = new OdbcConnection();
-        }
 
         private bool conn_open()
         {
-            switch (conn.State)
+            switch (Connection.State)
             {
                 case ConnectionState.Open:
                     {
@@ -28,11 +22,11 @@ namespace DTM.MSSQL
                     }
                 case ConnectionState.Closed:
 
-                    string con = $"Driver=SQL Server;Server={cred.Server};Database={cred.Datenbank};UID={cred.User};PWD={cred.Password};";
-                    conn.ConnectionString = con;
+                    string con = $"Driver=SQL Server;Server={Credential.Server};Database={Credential.Datenbank};UID={Credential.User};PWD={Credential.Password};";
+                    Connection.ConnectionString = con;
                     try
                     {
-                        conn.Open();
+                        Connection.Open();
                         return true;
                     }
                     catch (Exception ex)
@@ -55,11 +49,14 @@ namespace DTM.MSSQL
             _logger.Debug($"SQL: {SQL}");
             if (conn_open())
             {
-                DataTable dt = new DataTable();
+                DataTable dt = new();
 
 
-                OdbcDataAdapter ad = new OdbcDataAdapter(SQL, conn);
-                ad.Fill(dt);
+                using (OdbcDataAdapter ad = new(SQL, Connection))
+                {
+                    ad.Fill(dt);
+                }
+
                 return dt;
 
             }
@@ -72,11 +69,11 @@ namespace DTM.MSSQL
 
         public void Dispose()
         {
-            if (conn.State == ConnectionState.Open)
+            if (Connection.State == ConnectionState.Open)
             {
-                conn.Close();
+                Connection.Close();
             }
-            conn.Dispose();
+            Connection.Dispose();
         }
 
         public List<Database_Info> get_Datenbank_Names()
@@ -101,10 +98,10 @@ namespace DTM.MSSQL
 
         public Database_Stats GetDatabase_Stats(Database_Info database)
         {
-            Database_Stats_MSSQL stats = new Database_Stats_MSSQL
+            Database_Stats_MSSQL stats = new()
             {
                 DatabaseTyp = "MSSQL",
-                Server = cred.Server
+                Server = Credential.Server
             };
 
             // ---------- 1. Hauptdaten aus sys.databases ----------
@@ -134,11 +131,11 @@ namespace DTM.MSSQL
             }
 
             // ---------- 2. Files aus sys.master_files ----------
-            stats.Files = new List<DTM.File>();
+            stats.Files = new List<File>();
             DataTable dtFiles = get_Select_From_Master_Files(database.Name);
             foreach (DataRow row in dtFiles.Rows)
             {
-                stats.Files.Add(new DTM.File
+                stats.Files.Add(new File
                 {
                     FileLogicalName = row["FileLogicalName"] as string,
                     Type = row["FileType"] as string,
@@ -186,7 +183,7 @@ namespace DTM.MSSQL
             => value != null && value != DBNull.Value && Convert.ToBoolean(value);
         private DataTable get_Select_From_sysDatabase(string Database)
         {
-            StringBuilder sql = new StringBuilder();
+            StringBuilder sql = new();
 
             sql.Append($"SELECT ");
             sql.Append($"d.name                       AS DatabaseName,");
@@ -225,7 +222,7 @@ namespace DTM.MSSQL
         }
         private DataTable get_Select_From_Master_Files(string Database)
         {
-            StringBuilder sql = new StringBuilder();
+            StringBuilder sql = new();
 
             sql.Append($"SELECT ");
             sql.Append($"mf.name             AS FileLogicalName, ");
@@ -244,7 +241,7 @@ namespace DTM.MSSQL
 
         private DataTable get_Select_From_dm_exec_sessions(string Database)
         {
-            StringBuilder sql = new StringBuilder();
+            StringBuilder sql = new();
 
             sql.Append($"SELECT ");
             sql.Append($"s.session_id        AS SessionId,");
@@ -264,7 +261,7 @@ namespace DTM.MSSQL
 
         private DataTable get_Select_From_BufferPoolMB(string Database)
         {
-            StringBuilder sql = new StringBuilder();
+            StringBuilder sql = new();
 
             sql.Append($"SELECT ISNULL( ");
             sql.Append($"CAST( ");

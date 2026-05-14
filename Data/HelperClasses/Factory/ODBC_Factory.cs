@@ -15,13 +15,13 @@ namespace DTM
             switch (Name)
             {
                 case "MSSQL":
-                    if (_mssql_odbc == null)
+                    if (null == _mssql_odbc)
                     {
                         _mssql_odbc = new MSSQL.MSSQL_ODBC(credential);
                     }
                     return _mssql_odbc;
                 case "ORACLE":
-                    if (_oracle_odbc == null)
+                    if (null == _oracle_odbc)
                     {
                         _oracle_odbc = new ORACLE.ORACLE_ODBC(credential);
                     }

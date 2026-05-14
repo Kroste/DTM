@@ -5,7 +5,8 @@ namespace DTM
         public enum ServerTyp
         {
             ORACLE,
-            MSSQL
+            MSSQL,
+            PostgreSQL
         }
         public ServerCredential? serverCredential { get; private set; }
         public DB_SERVER(ServerCredential serverCredential)

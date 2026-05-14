@@ -9,14 +9,11 @@ using NLog;
 namespace DTM.ORACLE
 {
 
-    public class ORACLE_ODBC : IDisposable, IDTM_ODBC
+    public class ORACLE_ODBC(ServerCredential credential) : IDisposable, IDTM_ODBC
     {
-        private ORACLE.REST _rest;
+        private readonly REST _rest = new REST(credential, true);
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        public ORACLE_ODBC(ServerCredential credential)
-        {
-            _rest = new REST(credential, true);
-        }
+
         public void Dispose()
         {
             _rest?.Dispose();
@@ -63,8 +60,7 @@ namespace DTM.ORACLE
 
         public bool Clone_Database(Database_Info Database, DateTime cloneTime)
         {
-            string schedulerCommand = string.Empty;
-
+            string schedulerCommand;
             if (cloneTime > DateTime.Now)
             {
                 string atTime = cloneTime.ToString("HH:mm dd.MM.yyyy");
@@ -196,12 +192,12 @@ namespace DTM.ORACLE
             psi.ArgumentList.Add("--");
             psi.ArgumentList.Add(remoteCmd);
 
-            var stdout = new StringBuilder();
-            var stderr = new StringBuilder();
+            StringBuilder stdout = new();
+            StringBuilder stderr = new();
 
             try
             {
-                using var proc = new Process { StartInfo = psi };
+                using Process proc = new Process { StartInfo = psi };
                 proc.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
                 proc.ErrorDataReceived += (_, e) => { if (e.Data != null) stderr.AppendLine(e.Data); };
 
