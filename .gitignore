@@ -34,6 +34,7 @@ bld/
 !**/[Pp]ackages/build/
 *.nuget.props
 *.nuget.targets
+nuget.config
 
 # --- .NET Core / .NET 5+ ---
 project.lock.json
