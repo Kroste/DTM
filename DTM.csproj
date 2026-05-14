@@ -23,7 +23,7 @@
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
     <PackageReference Include="Avalonia.Diagnostics" Version="11.2.3" Condition="'$(Configuration)' == 'Debug'" />
     <!-- Pin transitive Avalonia-Abhängigkeit auf eine sichere Version (CVE GHSA-xrw6-gwf8-vvr9). -->
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.93.0" />
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
   </ItemGroup>
 
   <ItemGroup>
