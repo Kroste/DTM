@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="DTM.Views.Controls.ConsoleControl">
+
+    <Grid RowDefinitions="*,Auto" Background="Black">
+        <ScrollViewer Name="OutputScroll" Grid.Row="0" HorizontalScrollBarVisibility="Auto">
+            <SelectableTextBlock Name="OutputBlock"
+                                 FontFamily="Cascadia Mono, Consolas, Menlo, Monospace"
+                                 FontSize="12"
+                                 Foreground="#E0E0E0"
+                                 Padding="6"
+                                 TextWrapping="NoWrap" />
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Background="Black" Margin="6,2,6,4">
+            <TextBlock Grid.Column="0"
+                       Text=">"
+                       Foreground="LightGreen"
+                       FontFamily="Cascadia Mono, Consolas, Menlo, Monospace"
+                       FontSize="14"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       Margin="0,0,6,0" />
+            <TextBox Grid.Column="1"
+                     Name="InputBox"
+                     Background="Black"
+                     Foreground="White"
+                     BorderThickness="0"
+                     CaretBrush="White"
+                     FontFamily="Cascadia Mono, Consolas, Menlo, Monospace"
+                     FontSize="12"
+                     KeyDown="OnInputKeyDown" />
+        </Grid>
+    </Grid>
+
+</UserControl>

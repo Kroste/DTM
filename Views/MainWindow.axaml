@@ -1,0 +1,94 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:DTM.ViewModels"
+        xmlns:nodes="using:DTM.ViewModels.TreeNodes"
+        xmlns:ctrl="using:DTM.Views.Controls"
+        mc:Ignorable="d"
+        x:Class="DTM.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Datenbank-Manager"
+        Width="1280" Height="760"
+        MinWidth="960" MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="*,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="260,4,*">
+            <TreeView Grid.Column="0"
+                      ItemsSource="{Binding RootNodes}"
+                      SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
+                      ItemTemplate="{StaticResource NodeTemplate}">
+                <TreeView.Styles>
+                    <Style Selector="TreeViewItem" x:DataType="nodes:NodeViewModelBase">
+                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                    </Style>
+                </TreeView.Styles>
+            </TreeView>
+
+            <GridSplitter Grid.Column="1" Background="Transparent" />
+
+            <Grid Grid.Column="2" RowDefinitions="220,4,80,4,*">
+                <!-- Info-Panel -->
+                <Border Grid.Row="0" Padding="20" Background="{DynamicResource SystemRegionBrush}">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="{Binding DbName}" FontSize="18" FontWeight="Bold" />
+                        <TextBlock Text="{Binding DbHost}" />
+                        <TextBlock Text="{Binding DbStatus}" />
+                        <TextBlock Text="{Binding DbVersion}" />
+                        <TextBlock Text="{Binding DbSize}" />
+                        <TextBlock Text="{Binding RecoveryOrArchiveMode}" />
+                        <Button Content="{Binding ActiveSessionsLabel}"
+                                Command="{Binding ShowSessionsCommand}"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                HorizontalAlignment="Left"
+                                Foreground="{DynamicResource SystemAccentColor}" />
+                    </StackPanel>
+                </Border>
+
+                <GridSplitter Grid.Row="1" Background="Transparent" />
+
+                <!-- Action-Buttons -->
+                <Border Grid.Row="2" Padding="10">
+                    <WrapPanel Orientation="Horizontal">
+                        <Button Content="{Binding BackupButtonText}"
+                                Command="{Binding BackupCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="Clone"
+                                Command="{Binding CloneCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="Snapshot"
+                                Command="{Binding SnapshotCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="DB → Samba"
+                                Command="{Binding DbToSambaCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                    </WrapPanel>
+                </Border>
+
+                <GridSplitter Grid.Row="3" Background="Transparent" />
+
+                <!-- Console-Tabs -->
+                <TabControl Grid.Row="4">
+                    <TabItem Header="Shell (pwsh)">
+                        <ctrl:ConsoleControl FileName="pwsh" Arguments="-NoLogo" />
+                    </TabItem>
+                    <TabItem Header="SSH">
+                        <ctrl:ConsoleControl FileName="ssh" Arguments="" />
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="1" Padding="6,2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+            <TextBlock Text="{Binding StatusBar}" />
+        </Border>
+    </Grid>
+
+</Window>

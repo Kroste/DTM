@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:DTM.ViewModels"
+        mc:Ignorable="d"
+        x:Class="DTM.Views.SessionsWindow"
+        x:DataType="vm:SessionsViewModel"
+        Title="Sessions"
+        Width="800" Height="450"
+        WindowStartupLocation="CenterOwner">
+
+    <DataGrid ItemsSource="{Binding Sessions}"
+              IsReadOnly="True"
+              AutoGenerateColumns="False"
+              GridLinesVisibility="Horizontal">
+        <DataGrid.Columns>
+            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="*" />
+            <DataGridTextColumn Header="Maschine" Binding="{Binding Maschine}" Width="*" />
+            <DataGridTextColumn Header="Programm" Binding="{Binding Program}" Width="*" />
+            <DataGridTextColumn Header="Status"   Binding="{Binding Status}"   Width="Auto" />
+        </DataGrid.Columns>
+    </DataGrid>
+
+</Window>

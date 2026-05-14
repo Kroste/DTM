@@ -61,4 +61,7 @@ _ReSharper*/
 *.pdb
 *.dll
 *.exe
-# Hinwei
+
+# --- App-spezifisch ---
+# Lokale Credentials nicht einchecken (Vorlage: appsettings.example.json)
+appsettings.json

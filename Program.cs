@@ -1,27 +1,29 @@
+using Avalonia;
 using NLog;
-namespace DTM
-{
-    static class Program
-    {
 
-        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
-        [STAThread]
-        static void Main()
+namespace DTM;
+
+internal static class Program
+{
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
+    [STAThread]
+    public static void Main(string[] args)
+    {
+        try
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            try
-            {
-                ApplicationConfiguration.Initialize();
-                Application.Run(new Main_Form());
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex);
-            }
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        }
+        catch (Exception ex)
+        {
+            _logger.Fatal(ex, "Unbehandelter Fehler beim App-Start.");
+            throw;
         }
     }
+
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .WithInterFont()
+            .LogToTrace();
 }

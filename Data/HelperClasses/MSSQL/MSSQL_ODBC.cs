@@ -22,7 +22,10 @@ namespace DTM.MSSQL
                     }
                 case ConnectionState.Closed:
 
-                    string con = $"Driver=SQL Server;Server={Credential.Server};Database={Credential.Datenbank};UID={Credential.User};PWD={Credential.Password};";
+                    string driverFragment = OperatingSystem.IsWindows()
+                        ? "Driver=SQL Server"
+                        : "Driver={ODBC Driver 18 for SQL Server};TrustServerCertificate=yes";
+                    string con = $"{driverFragment};Server={Credential.Server};Database={Credential.Datenbank};UID={Credential.User};PWD={Credential.Password};";
                     Connection.ConnectionString = con;
                     try
                     {
