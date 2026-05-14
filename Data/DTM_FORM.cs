@@ -12,7 +12,7 @@ namespace DTM
         {
             this.dB_SERVERs = db_Servers;
             this.mainView = mainView;
-            _data = new DTM_DATA(db_Servers);
+            _data = new DTM_DATA(db_Servers, new ODBC_Factory());
             InitializeComponent();
 
         }

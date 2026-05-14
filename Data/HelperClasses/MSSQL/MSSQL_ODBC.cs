@@ -176,13 +176,13 @@ namespace DTM.MSSQL
         }
 
         // ---------- kleine Helper für robuste Konvertierungen ----------
-        private static double ToDouble(object value)
+        internal static double ToDouble(object value)
             => value == null || value == DBNull.Value ? 0d : Convert.ToDouble(value);
 
-        private static int ToInt(object value)
+        internal static int ToInt(object value)
             => value == null || value == DBNull.Value ? 0 : Convert.ToInt32(value);
 
-        private static bool ToBool(object value)
+        internal static bool ToBool(object value)
             => value != null && value != DBNull.Value && Convert.ToBoolean(value);
         private DataTable get_Select_From_sysDatabase(string Database)
         {

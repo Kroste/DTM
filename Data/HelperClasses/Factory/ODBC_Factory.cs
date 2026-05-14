@@ -1,10 +1,16 @@
 namespace DTM
 {
-    public static class ODBC_Factory
+    public interface IODBC_Factory
     {
-        static private ODBC.IDTM_ODBC? _mssql_odbc;
-        static private ODBC.IDTM_ODBC? _oracle_odbc;
-        public static ODBC.IDTM_ODBC? Get_DATA(string Name, ServerCredential credential)
+        ODBC.IDTM_ODBC? Get_DATA(string Name, ServerCredential credential);
+    }
+
+    public class ODBC_Factory : IODBC_Factory
+    {
+        private ODBC.IDTM_ODBC? _mssql_odbc;
+        private ODBC.IDTM_ODBC? _oracle_odbc;
+
+        public ODBC.IDTM_ODBC? Get_DATA(string Name, ServerCredential credential)
         {
             switch (Name)
             {

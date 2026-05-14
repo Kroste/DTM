@@ -234,7 +234,7 @@ namespace DTM.ORACLE
             }
         }
 
-        private static void ParseOracleStats(string[] lines, Database_Stats_ORACLE stats)
+        internal static void ParseOracleStats(string[] lines, Database_Stats_ORACLE stats)
         {
             foreach (var raw in lines)
             {
@@ -298,7 +298,7 @@ namespace DTM.ORACLE
             }
         }
 
-        private static double ParseDouble(string s)
+        internal static double ParseDouble(string s)
             => double.TryParse(s.Trim().Replace(',', '.'),
                                NumberStyles.Any,
                                CultureInfo.InvariantCulture,
