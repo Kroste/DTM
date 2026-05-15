@@ -42,10 +42,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedNodeChanged(NodeViewModelBase? value)
     {
-        if (value is DatabaseNodeViewModel db)
+        switch (value)
         {
-            _ = LoadStatsAsync(db);
+            case ServerNodeViewModel server:
+                _ = LoadServerAsync(server);
+                break;
+            case DatabaseNodeViewModel db:
+                _ = LoadStatsAsync(db);
+                break;
         }
+    }
+
+    private static async Task LoadServerAsync(ServerNodeViewModel server)
+    {
+        await server.EnsureChildrenLoadedAsync();
+        server.IsExpanded = true;
     }
 
     private async Task LoadStatsAsync(DatabaseNodeViewModel db)

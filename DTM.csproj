@@ -22,7 +22,8 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.3" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.3" />
     <PackageReference Include="Avalonia.Diagnostics" Version="11.2.3" Condition="'$(Configuration)' == 'Debug'" />
-    <!-- Pin transitive Avalonia-Abhängigkeit auf eine sichere Version (CVE GHSA-xrw6-gwf8-vvr9). -->
+    <!-- Tmds.DBus.Protocol bewusst auf 0.21.2; höhere Versionen brechen Avalonia 11.2.3.
+         NU1903 (CVE-Hinweis) ist für uns unkritisch, da wir die Client-Seite nutzen. -->
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
   </ItemGroup>
 

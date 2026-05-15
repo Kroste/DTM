@@ -20,11 +20,14 @@ public sealed class ServerNodeViewModel : NodeViewModelBase
 
     protected override void OnExpanded()
     {
-        if (!_childrenLoaded)
-        {
-            _childrenLoaded = true;
-            _ = LoadChildrenAsync();
-        }
+        _ = EnsureChildrenLoadedAsync();
+    }
+
+    public async Task EnsureChildrenLoadedAsync()
+    {
+        if (_childrenLoaded) return;
+        _childrenLoaded = true;
+        await LoadChildrenAsync();
     }
 
     private async Task LoadChildrenAsync()
