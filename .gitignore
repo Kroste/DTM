@@ -9,7 +9,7 @@
 *.userosscache
 *.sln.docstates
 *.rsuser
-*.lscache
+*.csproj.lscache
 
 # --- Build-Ergebnisse ---
 [Bb]in/
