@@ -309,56 +309,58 @@ namespace DTM.MSSQL
             string unc = EscPs(UncBase);
             string db  = EscPs(database);
 
-            return $"""
-                $pw   = ConvertTo-SecureString '{pw}' -AsPlainText -Force
-                $cred = New-Object PSCredential('{u}', $pw)
-                $sess = New-PSSession -ComputerName '{sv}' -Credential $cred -ErrorAction Stop
-                try {{
-                    Invoke-Command -Session $sess -ArgumentList '{unc}','{db}','{u}','{pw}' -ScriptBlock {{
+            // $$""" = double-dollar raw string: {{expr}} is C# interpolation,
+            // bare $ { } are literal characters (no doubling needed for PS script blocks).
+            return $$"""
+                $pw   = ConvertTo-SecureString '{{pw}}' -AsPlainText -Force
+                $cred = New-Object PSCredential('{{u}}', $pw)
+                $sess = New-PSSession -ComputerName '{{sv}}' -Credential $cred -ErrorAction Stop
+                try {
+                    Invoke-Command -Session $sess -ArgumentList '{{unc}}','{{db}}','{{u}}','{{pw}}' -ScriptBlock {
                         param($unc,$db,$user,$pwStr)
                         $c = New-Object PSCredential($user,(ConvertTo-SecureString $pwStr -AsPlainText -Force))
                         New-PSDrive -Name DTMz -PSProvider FileSystem -Root $unc -Credential $c -ErrorAction Stop | Out-Null
-                        try   {{ Set-Location "DTMz:\$db"; & ".\{script}" }}
-                        finally {{ Remove-PSDrive -Name DTMz -Force -ErrorAction SilentlyContinue }}
-                    }}
-                }} finally {{ Remove-PSSession $sess }}
+                        try   { Set-Location "DTMz:\$db"; & ".\{{script}}" }
+                        finally { Remove-PSDrive -Name DTMz -Force -ErrorAction SilentlyContinue }
+                    }
+                } finally { Remove-PSSession $sess }
                 """;
         }
 
         internal string BuildSchedulePs(string database, string script, DateTime at)
         {
-            string sv   = EscPs(Credential.Server);
-            string u    = EscPs(Credential.User);
-            string pw   = EscPs(Credential.Password);
-            string unc  = EscPs(UncBase);
-            string db   = EscPs(database);
-            string task = $"DTM_{script.Replace('.', '_')}_{EscPs(database)}_{at:yyyyMMddHHmm}";
+            string sv    = EscPs(Credential.Server);
+            string u     = EscPs(Credential.User);
+            string pw    = EscPs(Credential.Password);
+            string unc   = EscPs(UncBase);
+            string db    = EscPs(database);
+            string task  = $"DTM_{script.Replace('.', '_')}_{EscPs(database)}_{at:yyyyMMddHHmm}";
             string atStr = at.ToString("yyyy-MM-dd HH:mm");
 
             // Inner script runs on FOC-SQL01 as scheduled task action.
             // Base64-encoded (UTF-16LE) so -EncodedCommand bypasses all quoting issues.
-            string inner = $"""
-                $pw = ConvertTo-SecureString '{pw}' -AsPlainText -Force
-                $c  = New-Object PSCredential('{u}', $pw)
-                New-PSDrive -Name DTMz -PSProvider FileSystem -Root '{unc}' -Credential $c -ErrorAction Stop | Out-Null
-                try   {{ Set-Location "DTMz:\{db}"; & ".\{script}" }}
-                finally {{ Remove-PSDrive -Name DTMz -Force -ErrorAction SilentlyContinue }}
+            string inner = $$"""
+                $pw = ConvertTo-SecureString '{{pw}}' -AsPlainText -Force
+                $c  = New-Object PSCredential('{{u}}', $pw)
+                New-PSDrive -Name DTMz -PSProvider FileSystem -Root '{{unc}}' -Credential $c -ErrorAction Stop | Out-Null
+                try   { Set-Location "DTMz:\{{db}}"; & ".\{{script}}" }
+                finally { Remove-PSDrive -Name DTMz -Force -ErrorAction SilentlyContinue }
                 """;
             string enc = Convert.ToBase64String(Encoding.Unicode.GetBytes(inner));
 
-            return $"""
-                $pw   = ConvertTo-SecureString '{pw}' -AsPlainText -Force
-                $cred = New-Object PSCredential('{u}', $pw)
-                $sess = New-PSSession -ComputerName '{sv}' -Credential $cred -ErrorAction Stop
-                try {{
-                    Invoke-Command -Session $sess -ArgumentList '{task}','{atStr}','{enc}','{u}','{pw}' -ScriptBlock {{
+            return $$"""
+                $pw   = ConvertTo-SecureString '{{pw}}' -AsPlainText -Force
+                $cred = New-Object PSCredential('{{u}}', $pw)
+                $sess = New-PSSession -ComputerName '{{sv}}' -Credential $cred -ErrorAction Stop
+                try {
+                    Invoke-Command -Session $sess -ArgumentList '{{task}}','{{atStr}}','{{enc}}','{{u}}','{{pw}}' -ScriptBlock {
                         param($taskName,$at,$enc,$taskUser,$taskPw)
                         $action  = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NonInteractive -EncodedCommand $enc"
                         $trigger = New-ScheduledTaskTrigger -Once -At $at
                         Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -User $taskUser -Password $taskPw -RunLevel Highest -Force | Out-Null
                         Write-Host "Aufgabe '$taskName' fuer $at registriert"
-                    }}
-                }} finally {{ Remove-PSSession $sess }}
+                    }
+                } finally { Remove-PSSession $sess }
                 """;
         }
 
