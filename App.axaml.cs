@@ -23,7 +23,7 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var (servers, dtmData) = BuildDataLayer();
+            (Dictionary<DB_SERVER.ServerTyp, DB_SERVER>? servers, IDTM_DATA? dtmData) = BuildDataLayer();
             desktop.MainWindow = new MainWindow
             {
                 DataContext = new MainWindowViewModel(dtmData, servers.Keys)
@@ -35,8 +35,8 @@ public partial class App : Application
 
     private static (Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers, IDTM_DATA data) BuildDataLayer()
     {
-        var settings = LoadSettings();
-        var servers = new Dictionary<DB_SERVER.ServerTyp, DB_SERVER>();
+        AppSettings settings = LoadSettings();
+        Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers = new Dictionary<DB_SERVER.ServerTyp, DB_SERVER>();
 
         foreach (var (key, cfg) in settings.Servers)
         {
@@ -50,17 +50,17 @@ public partial class App : Application
             }
         }
 
-        var data = new DTM_DATA(servers, new ODBC_Factory());
+        DTM_DATA data = new DTM_DATA(servers, new ODBC_Factory());
         return (servers, data);
     }
 
     private static AppSettings LoadSettings()
     {
-        var baseDir = AppContext.BaseDirectory;
-        var primary = Path.Combine(baseDir, "appsettings.json");
-        var fallback = Path.Combine(baseDir, "appsettings.example.json");
+        string baseDir = AppContext.BaseDirectory;
+        string primary = Path.Combine(baseDir, "appsettings.json");
+        string fallback = Path.Combine(baseDir, "appsettings.example.json");
 
-        var builder = new ConfigurationBuilder().SetBasePath(baseDir);
+        IConfigurationBuilder builder = new ConfigurationBuilder().SetBasePath(baseDir);
         if (System.IO.File.Exists(primary))
         {
             builder.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false);
@@ -71,7 +71,7 @@ public partial class App : Application
             builder.AddJsonFile("appsettings.example.json", optional: true, reloadOnChange: false);
         }
 
-        var config = builder.Build();
+        IConfigurationRoot config = builder.Build();
         return config.Get<AppSettings>() ?? new AppSettings();
     }
 }

@@ -142,7 +142,7 @@ public partial class ConsoleControl : UserControl
         if (e.Key != Key.Enter) return;
         e.Handled = true;
 
-        var cmd = InputBox.Text ?? string.Empty;
+        string cmd = InputBox.Text ?? string.Empty;
         InputBox.Text = string.Empty;
 
         if (_process is null || _process.HasExited)

@@ -34,7 +34,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(IDTM_DATA data, IEnumerable<DB_SERVER.ServerTyp> serverTypes)
     {
         _data = data;
-        foreach (var typ in serverTypes)
+        foreach (DB_SERVER.ServerTyp typ in serverTypes)
         {
             RootNodes.Add(new ServerNodeViewModel(typ, data));
         }
@@ -64,7 +64,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         StatusBar = $"Lade Stats für {db.Database.Name}…";
         try
         {
-            var stats = await Task.Run(() => _data.get_Database_Stats(db.ServerTyp, db.Database));
+            Database_Stats stats = await Task.Run(() => _data.get_Database_Stats(db.ServerTyp, db.Database));
             await Dispatcher.UIThread.InvokeAsync(() => ApplyStats(stats));
             StatusBar = "Bereit";
         }
@@ -107,13 +107,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
 
-        var when = await PickTimeAsync();
+        DateTime? when = await PickTimeAsync();
         if (when is null) return;
 
         StatusBar = $"Backup für {db.Database.Name} um {when:g} gestartet…";
         try
         {
-            var ok = await Task.Run(() => _data.Backup_Database(db.ServerTyp, db.Database, when.Value));
+            bool ok = await Task.Run(() => _data.Backup_Database(db.ServerTyp, db.Database, when.Value));
             StatusBar = ok ? $"Backup für {db.Database.Name} ausgelöst." : $"Backup für {db.Database.Name} fehlgeschlagen.";
         }
         catch (Exception ex)
@@ -128,13 +128,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
 
-        var when = await PickTimeAsync();
+        DateTime? when = await PickTimeAsync();
         if (when is null) return;
 
         StatusBar = $"Clone für {db.Database.Name} um {when:g} gestartet…";
         try
         {
-            var ok = await Task.Run(() => _data.Clone_Database(db.ServerTyp, db.Database, when.Value));
+            bool ok = await Task.Run(() => _data.Clone_Database(db.ServerTyp, db.Database, when.Value));
             StatusBar = ok ? $"Clone für {db.Database.Name} ausgelöst." : $"Clone für {db.Database.Name} fehlgeschlagen.";
         }
         catch (Exception ex)
@@ -153,21 +153,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task ShowSessions()
     {
-        var owner = GetMainWindow();
+        Window? owner = GetMainWindow();
         if (owner is null) return;
 
-        var vm = new SessionsViewModel();
+        SessionsViewModel vm = new SessionsViewModel();
         vm.SetSessions(_currentSessions);
-        var dlg = new SessionsWindow { DataContext = vm };
+        SessionsWindow dlg = new SessionsWindow { DataContext = vm };
         await dlg.ShowDialog(owner);
     }
 
     private async Task<DateTime?> PickTimeAsync()
     {
-        var owner = GetMainWindow();
+        Window? owner = GetMainWindow();
         if (owner is null) return null;
 
-        var dlg = new TimePickerWindow { DataContext = new TimePickerViewModel() };
+        TimePickerWindow dlg = new TimePickerWindow { DataContext = new TimePickerViewModel() };
         return await dlg.ShowDialog<DateTime?>(owner);
     }
 

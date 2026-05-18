@@ -10,7 +10,7 @@ public sealed class SessionsViewModel : ViewModelBase
     {
         Sessions.Clear();
         if (sessions is null) return;
-        foreach (var s in sessions)
+        foreach (Session s in sessions)
         {
             Sessions.Add(s);
         }
