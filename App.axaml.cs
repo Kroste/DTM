@@ -26,7 +26,7 @@ public partial class App : Application
             (Dictionary<DB_SERVER.ServerTyp, DB_SERVER>? servers, IDTM_DATA? dtmData) = BuildDataLayer();
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(dtmData, servers.Keys)
+                DataContext = new MainWindowViewModel(dtmData, servers)
             };
         }
 

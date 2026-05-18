@@ -77,10 +77,13 @@
                 <!-- Console-Tabs -->
                 <TabControl Grid.Row="4">
                     <TabItem Header="Shell (pwsh)">
-                        <ctrl:ConsoleControl FileName="pwsh" Arguments="-NoLogo" />
+                        <ctrl:ConsoleControl FileName="pwsh"
+                                             Arguments="-NoLogo"
+                                             InitialCommand="{Binding ShellInitialCommand}" />
                     </TabItem>
                     <TabItem Header="SSH">
-                        <ctrl:ConsoleControl FileName="ssh" Arguments="" />
+                        <ctrl:ConsoleControl FileName="ssh"
+                                             Arguments="{Binding SshArguments}" />
                     </TabItem>
                 </TabControl>
             </Grid>

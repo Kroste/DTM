@@ -14,6 +14,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private readonly IDTM_DATA _data;
+    private readonly string _mssqlServer;
 
     public ObservableCollection<NodeViewModelBase> RootNodes { get; } = new();
 
@@ -28,16 +29,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _activeSessionsLabel = "Aktive Sessions: —";
     [ObservableProperty] private string _statusBar = "Bereit";
     [ObservableProperty] private string _backupButtonText = "Backup";
+    [ObservableProperty] private string _sshArguments = string.Empty;
 
     private List<Session> _currentSessions = new();
 
-    public MainWindowViewModel(IDTM_DATA data, IEnumerable<DB_SERVER.ServerTyp> serverTypes)
+    public string ShellInitialCommand =>
+        $"$c = if (Test-Path \"$env:USERPROFILE\\credential.xml\") {{ Import-Clixml \"$env:USERPROFILE\\credential.xml\" }} else {{ Get-Credential }}; Enter-PSSession -ComputerName {_mssqlServer} -Credential $c";
+
+    public MainWindowViewModel(IDTM_DATA data, Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers)
     {
         _data = data;
-        foreach (DB_SERVER.ServerTyp typ in serverTypes)
-        {
+        _mssqlServer = servers.TryGetValue(DB_SERVER.ServerTyp.MSSQL, out var sv)
+            ? sv.serverCredential?.Server ?? "FOC-SQL01"
+            : "FOC-SQL01";
+        foreach (var typ in servers.Keys)
             RootNodes.Add(new ServerNodeViewModel(typ, data));
-        }
     }
 
     partial void OnSelectedNodeChanged(NodeViewModelBase? value)
@@ -49,6 +55,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 break;
             case DatabaseNodeViewModel db:
                 _ = LoadStatsAsync(db);
+                if (db.ServerTyp == DB_SERVER.ServerTyp.ORACLE && !string.IsNullOrWhiteSpace(db.Database.FQDN))
+                    SshArguments = $"oracle@{db.Database.FQDN}";
                 break;
         }
     }

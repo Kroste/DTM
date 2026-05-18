@@ -21,6 +21,9 @@ public partial class ConsoleControl : UserControl
     public static readonly StyledProperty<string?> WorkingDirectoryProperty =
         AvaloniaProperty.Register<ConsoleControl, string?>(nameof(WorkingDirectory));
 
+    public static readonly StyledProperty<string> InitialCommandProperty =
+        AvaloniaProperty.Register<ConsoleControl, string>(nameof(InitialCommand), defaultValue: string.Empty);
+
     public string FileName
     {
         get => GetValue(FileNameProperty);
@@ -39,7 +42,16 @@ public partial class ConsoleControl : UserControl
         set => SetValue(WorkingDirectoryProperty, value);
     }
 
+    public string InitialCommand
+    {
+        get => GetValue(InitialCommandProperty);
+        set => SetValue(InitialCommandProperty, value);
+    }
+
     private Process? _process;
+    private string? _startedWithArguments;
+    private bool _isAttached;
+    private bool _windowCloseRegistered;
 
     public ConsoleControl()
     {
@@ -48,14 +60,40 @@ public partial class ConsoleControl : UserControl
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        _isAttached = true;
         base.OnAttachedToVisualTree(e);
-        Start();
+
+        if (!_windowCloseRegistered && e.Root is Window w)
+        {
+            _windowCloseRegistered = true;
+            w.Closed += (_, _) => Stop();
+        }
+
+        // Restart only if not running or if the connection target changed
+        if (_process is null || _process.HasExited || _startedWithArguments != Arguments)
+        {
+            Stop();
+            Start();
+        }
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        Stop();
+        _isAttached = false;
+        // Keep process alive across tab switches — only Window.Closed disposes it
         base.OnDetachedFromVisualTree(e);
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        // When the connection target changes while the tab is visible, reconnect immediately
+        if (change.Property == ArgumentsProperty && _isAttached)
+        {
+            Stop();
+            Start();
+        }
     }
 
     public void Start()
@@ -76,6 +114,7 @@ public partial class ConsoleControl : UserControl
 
     private bool TryStartProcess(string fileName)
     {
+        _startedWithArguments = Arguments;
         try
         {
             _process = new Process
@@ -97,13 +136,24 @@ public partial class ConsoleControl : UserControl
             };
 
             _process.OutputDataReceived += (_, e) => Append(e.Data, "#E0E0E0");
-            _process.ErrorDataReceived += (_, e) => Append(e.Data, "indianred");
-            _process.Exited += (_, _) => Append($"[Prozess beendet: {fileName}]", "gray");
+            _process.ErrorDataReceived  += (_, e) => Append(e.Data, "indianred");
+            _process.Exited             += (_, _) => Append($"[Prozess beendet: {fileName}]", "gray");
 
             _process.Start();
             _process.BeginOutputReadLine();
             _process.BeginErrorReadLine();
             Append($"[Gestartet: {fileName} {Arguments}]", "lightskyblue");
+
+            if (!string.IsNullOrWhiteSpace(InitialCommand))
+            {
+                string cmd = InitialCommand;
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(800);
+                    Dispatcher.UIThread.Post(() => SendCommand(cmd));
+                });
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -137,6 +187,18 @@ public partial class ConsoleControl : UserControl
         }
     }
 
+    public void SendCommand(string cmd)
+    {
+        if (_process is null || _process.HasExited)
+        {
+            Append("[Kein Prozess aktiv]", "indianred");
+            return;
+        }
+        Append($"> {cmd}", "lightgreen");
+        try { _process.StandardInput.WriteLine(cmd); }
+        catch (Exception ex) { Append($"[Fehler: {ex.Message}]", "indianred"); }
+    }
+
     private void OnInputKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter) return;
@@ -144,16 +206,7 @@ public partial class ConsoleControl : UserControl
 
         string cmd = InputBox.Text ?? string.Empty;
         InputBox.Text = string.Empty;
-
-        if (_process is null || _process.HasExited)
-        {
-            Append("[Kein Prozess aktiv]", "indianred");
-            return;
-        }
-
-        Append($"> {cmd}", "lightgreen");
-        try { _process.StandardInput.WriteLine(cmd); }
-        catch (Exception ex) { Append($"[Fehler: {ex.Message}]", "indianred"); }
+        SendCommand(cmd);
     }
 
     private void Append(string? text, string color)
