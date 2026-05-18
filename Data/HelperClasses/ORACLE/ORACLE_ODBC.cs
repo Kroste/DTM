@@ -70,11 +70,10 @@ namespace DTM.ORACLE
             else
             {
                 schedulerCommand = "clone=$(ls -t /home/oracle/scripts/clone* | head -n1) && ";
-                schedulerCommand += "if [[ -z \"$clone\" ]]; then echo \"kein Clone Script gefunden\"; else echo \"$clone\"; fi";
+                schedulerCommand += "if [[ -z \"$clone\" ]]; then echo \"kein Clone Script gefunden\"; else bash \"$clone\"; fi";
             }
 
-            if (string.IsNullOrWhiteSpace(schedulerCommand))
-                ExecuteRemoteSqlScript(Database.FQDN!, schedulerCommand);
+            ExecuteRemoteSqlScript(Database.FQDN!, schedulerCommand);
             return true;
         }
 
