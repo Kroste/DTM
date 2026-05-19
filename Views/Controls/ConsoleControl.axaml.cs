@@ -209,9 +209,11 @@ public partial class ConsoleControl : UserControl
             return;
         }
 
-        // Echo den Befehl lokal mit ">"-Prefix, für beide Tabs (auch SSH, weil
-        // wir nicht zuverlässig wissen, ob das Remote-PTY echo't).
-        Append($"> {cmd}", "ECHO", appendNewline: true);
+        // Echo den Befehl lokal — aber nur für PowerShell. Bei SSH echo't das
+        // Remote-PTY den Befehl selbst zurück (siehe v4-Logs); ein lokales
+        // Echo würde jeden Befehl doppelt anzeigen.
+        if (Kind == TerminalKind.PowerShell)
+            Append($"> {cmd}", "ECHO", appendNewline: true);
 
         _ = _session.SendCommandAsync(cmd);
     }
@@ -227,10 +229,10 @@ public partial class ConsoleControl : UserControl
     }
 
     /// <summary>
-    /// Hängt Text an die Output-TextBox an. Marshalled korrekt auf den UI-Thread.
-    /// Schreibt zusätzlich ein Diagnose-Log nach %TEMP%/dtm-console.log, damit
-    /// im Problemfall nachvollziehbar ist, was wann angekommen ist - unabhängig
-    /// davon, ob die UI es darstellt.
+    /// Routet Stream-Output an die <see cref="AnsiConsole"/> mit angemessenem
+    /// Styling. SSH-Output enthält ANSI-Codes, die der Parser farbig
+    /// interpretiert. Meta-Streams (Notice/Error/Echo) bekommen feste Farben.
+    /// Zusätzlich Diagnose-Log nach %TEMP%/dtm-console.log.
     /// </summary>
     private void Append(string? text, string kind, bool appendNewline = false)
     {
@@ -245,32 +247,31 @@ public partial class ConsoleControl : UserControl
         }
         catch { /* swallow */ }
 
-        string display = appendNewline ? text + Environment.NewLine : text;
-        // Für die Read-only-TextBox-Variante prefixen wir Meta-Streams,
-        // damit man sie vom Befehls-Output unterscheiden kann.
-        string prefixed = kind switch
+        string display = appendNewline ? text + "\n" : text;
+        switch (kind)
         {
-            "NTC"  => display,                // Notice-Meldungen sind ohnehin in [...]-Klammern
-            "ERR"  => "[ERR] " + display,
-            "ECHO" => display,                // "> cmd"-Echo unverändert
-            _      => display
-        };
-
-        // Wichtig: nicht Invoke (blocking, kann deadlocken), sondern Post.
-        Dispatcher.UIThread.Post(() =>
-        {
-            try
-            {
-                // Avalonia-TextBox kennt kein AppendText — String-Konkat reicht,
-                // weil TextBox.Text intern als Direct-Property korrekt invalidiert.
-                OutputBox.Text = (OutputBox.Text ?? string.Empty) + prefixed;
-                // Caret ans Ende; das löst auch das BringIntoView aus.
-                OutputBox.CaretIndex = OutputBox.Text.Length;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Append in OutputBox fehlgeschlagen.");
-            }
-        }, DispatcherPriority.Background);
+            case "OUT":
+                // ANSI-Codes durch den Parser, Farben übernehmen.
+                Output.Append(display);
+                break;
+            case "ERR":
+                Output.AppendLine(display, new AnsiStyle(
+                    Foreground: new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0xCD, 0x5C, 0x5C)),
+                    Background: null, Bold: false, Italic: false, Underline: false));
+                break;
+            case "NTC":
+                Output.AppendLine(display, new AnsiStyle(
+                    Foreground: new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x87, 0xCE, 0xFA)),
+                    Background: null, Bold: false, Italic: false, Underline: false));
+                break;
+            case "ECHO":
+                Output.AppendLine(display, new AnsiStyle(
+                    Foreground: new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x90, 0xEE, 0x90)),
+                    Background: null, Bold: true, Italic: false, Underline: false));
+                break;
+            default:
+                Output.Append(display);
+                break;
+        }
     }
 }

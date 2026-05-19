@@ -61,10 +61,17 @@ public static class TerminalBus
             return;
         }
 
-        // Header sichtbar machen: über den Notice-Kanal, sonst würde der Header
-        // selbst durch Out-String-Stream geleitet. Notice landet sofort.
-        if (!string.IsNullOrWhiteSpace(title))
-            (sess as ITerminalBusInjector)?.InjectNotice($"[Hintergrund-Job: {title}]");
+        // Header sichtbar machen über den Notice-Kanal. Output des Scripts
+        // selbst läuft danach durch die normale Pipeline und erscheint
+        // mit seinen Write-Host/Write-Output-Zeilen im Tab. Das Skript
+        // selbst (oft 30+ Zeilen Code) NICHT als Echo zeigen — das wäre
+        // unleserlicher Lärm; nur den Titel.
+        if (sess is ITerminalBusInjector injector)
+        {
+            if (!string.IsNullOrWhiteSpace(title))
+                injector.InjectNotice($"[Hintergrund-Job: {title}]");
+            injector.InjectNotice($"[Script läuft, Output folgt …]");
+        }
 
         _ = sess.SendCommandAsync(script);
     }
