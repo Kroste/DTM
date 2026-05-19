@@ -2,6 +2,7 @@ using System.Data;
 using System.Data.Odbc;
 using System.Diagnostics;
 using System.Text;
+using DTM.Data.Terminal;
 using DTM.ODBC;
 using NLog;
 
@@ -288,7 +289,11 @@ namespace DTM.MSSQL
             string psCmd = backupTime > DateTime.Now
                 ? BuildSchedulePs(database.Name, "Database-Backup.ps1", backupTime)
                 : BuildRunPs(database.Name, "Database-Backup.ps1");
-            ExecuteLocalPs(psCmd);
+
+            // Wenn der pwsh-Tab geöffnet ist: dort live anzeigen. Sonst die alte
+            // Out-of-Process-Variante, damit die Funktionalität nicht von einem
+            // sichtbaren Tab abhängt.
+            DispatchToConsoleOrFallback($"Backup {database.Name}", psCmd);
             return true;
         }
 
@@ -297,8 +302,16 @@ namespace DTM.MSSQL
             string psCmd = cloneTime > DateTime.Now
                 ? BuildSchedulePs(database.Name, "Database-Clone.ps1", cloneTime)
                 : BuildRunPs(database.Name, "Database-Clone.ps1");
-            ExecuteLocalPs(psCmd);
+            DispatchToConsoleOrFallback($"Clone {database.Name}", psCmd);
             return true;
+        }
+
+        private void DispatchToConsoleOrFallback(string title, string script)
+        {
+            TerminalBus.RunScript(
+                title: title,
+                script: script,
+                onUnavailable: () => ExecuteLocalPs(script));
         }
 
         internal string BuildRunPs(string database, string script)

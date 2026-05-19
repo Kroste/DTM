@@ -15,7 +15,7 @@ namespace DTM.Data.Terminal;
 /// getippte Befehl wird automatisch via <c>Invoke-Command -Session $session</c>
 /// remote ausgeführt (sofern <c>$session</c> existiert und offen ist).
 /// </summary>
-public sealed class PowerShellTerminalSession : ITerminalSession
+public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusInjector
 {
     /// <summary>Optionales Setup-Skript, das einmal beim Start läuft.</summary>
     public string? InitialScript { get; }
@@ -44,6 +44,17 @@ public sealed class PowerShellTerminalSession : ITerminalSession
         AutoRouteThroughSession = autoRouteThroughSession;
     }
 
+    // Defense in depth: falls die Telemetry-Opt-Out-Env-Variable aus irgendeinem
+    // Grund nicht greift, schlucken wir AppInsights-Envelopes hier raus, statt
+    // sie ins UI durchzulassen.
+    private static bool IsTelemetryNoise(string? line)
+    {
+        if (string.IsNullOrEmpty(line)) return false;
+        ReadOnlySpan<char> s = line.AsSpan().TrimStart();
+        return s.StartsWith("Application Insights Telemetry:", StringComparison.Ordinal)
+            || (s.StartsWith("{\"name\":", StringComparison.Ordinal) && s.Contains("\"iKey\":", StringComparison.Ordinal));
+    }
+
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -56,6 +67,7 @@ public sealed class PowerShellTerminalSession : ITerminalSession
             {
                 Notice?.Invoke(this, "[Initial-Setup wird ausgeführt …]");
                 await ExecuteRawAsync(InitialScript!, cancellationToken).ConfigureAwait(false);
+                Notice?.Invoke(this, "[Initial-Setup abgeschlossen]");
             }
         }
         catch (Exception ex)
@@ -79,7 +91,11 @@ public sealed class PowerShellTerminalSession : ITerminalSession
     /// <summary>
     /// Verpackt einen User-Befehl so, dass er — falls $session offen ist —
     /// per Invoke-Command auf der Remote-Session läuft, sonst lokal.
-    /// Wir kodieren den Befehl Base64, um sämtliche Quoting-Probleme
+    /// Output wird durch <c>Out-String -Stream</c> geschickt, damit der
+    /// Default-Formatter aktiv wird (Tabellen statt 'System.Diagnostics.Process'
+    /// als ToString-Output). Im SDK-Hosting fehlt sonst der Out-Default-Pfad,
+    /// den pwsh.exe automatisch anhängt.
+    /// Wir kodieren den User-Befehl Base64, um sämtliche Quoting-Probleme
     /// zwischen C# und PowerShell zu vermeiden.
     /// </summary>
     private static string WrapForOptionalRemoting(string userCommand)
@@ -88,11 +104,13 @@ public sealed class PowerShellTerminalSession : ITerminalSession
         return $@"
 $__cmd = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('{encoded}'))
 $__sb  = [scriptblock]::Create($__cmd)
-if ($session -and $session.State -eq 'Opened') {{
-    Invoke-Command -Session $session -ScriptBlock $__sb
-}} else {{
-    & $__sb
-}}
+& {{
+    if ($session -and $session.State -eq 'Opened') {{
+        Invoke-Command -Session $session -ScriptBlock $__sb
+    }} else {{
+        & $__sb
+    }}
+}} | Out-String -Stream -Width 200
 Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
 ";
     }
@@ -117,27 +135,43 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
             {
                 var obj = output[e.Index];
                 if (obj is null) return;
-                OutputReceived?.Invoke(this, obj.ToString() + Environment.NewLine);
+                string text = obj.ToString();
+                if (IsTelemetryNoise(text)) return;
+                OutputReceived?.Invoke(this, text + Environment.NewLine);
             };
 
             ps.Streams.Error.DataAdded += (_, e) =>
             {
                 var err = ps.Streams.Error[e.Index];
-                ErrorReceived?.Invoke(this, err.ToString() + Environment.NewLine);
+                string text = err.ToString();
+                if (IsTelemetryNoise(text)) return;
+                ErrorReceived?.Invoke(this, text + Environment.NewLine);
             };
             ps.Streams.Warning.DataAdded += (_, e) =>
             {
                 var w = ps.Streams.Warning[e.Index];
+                if (IsTelemetryNoise(w.Message)) return;
                 Notice?.Invoke(this, $"WARNING: {w.Message}");
             };
             ps.Streams.Information.DataAdded += (_, e) =>
             {
                 var info = ps.Streams.Information[e.Index];
-                Notice?.Invoke(this, info.MessageData?.ToString() ?? string.Empty);
+                string text = info.MessageData?.ToString() ?? string.Empty;
+                if (IsTelemetryNoise(text)) return;
+
+                // Write-Host landet in PowerShell 5+ als Information-Record mit Tag "PSHOST".
+                // Aus User-Sicht ist das normaler Console-Output (im Initial-Script z.B.
+                // unsere "Verbunden mit ..."-Meldung), nicht ein Meta-Notice.
+                bool isWriteHost = info.Tags?.Contains("PSHOST") == true;
+                if (isWriteHost)
+                    OutputReceived?.Invoke(this, text + Environment.NewLine);
+                else
+                    Notice?.Invoke(this, text);
             };
             ps.Streams.Verbose.DataAdded += (_, e) =>
             {
                 var v = ps.Streams.Verbose[e.Index];
+                if (IsTelemetryNoise(v.Message)) return;
                 Notice?.Invoke(this, $"VERBOSE: {v.Message}");
             };
 
@@ -182,4 +216,10 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
         catch { /* swallow */ }
         _executionLock.Dispose();
     }
+
+    /// <summary>
+    /// Erlaubt dem TerminalBus, Hintergrund-Job-Header in den Output-Stream
+    /// einzuschleusen, ohne dass dafür ein PS-Befehl ausgeführt werden muss.
+    /// </summary>
+    public void InjectNotice(string text) => Notice?.Invoke(this, text);
 }

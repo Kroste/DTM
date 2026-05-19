@@ -6,14 +6,24 @@
              x:Class="DTM.Views.Controls.ConsoleControl">
 
     <Grid RowDefinitions="*,Auto" Background="Black">
-        <ScrollViewer Name="OutputScroll" Grid.Row="0" HorizontalScrollBarVisibility="Auto">
-            <SelectableTextBlock Name="OutputBlock"
-                                 FontFamily="Cascadia Mono, Consolas, Menlo, Monospace"
-                                 FontSize="12"
-                                 Foreground="#E0E0E0"
-                                 Padding="6"
-                                 TextWrapping="NoWrap" />
-        </ScrollViewer>
+        <!-- Read-only TextBox statt SelectableTextBlock+Inlines:
+             - kein "HasComplexContent"-Bug, kein flackerndes Re-Layout
+             - AppendText ist effizient und reicht den Caret bis ans Ende durch
+             - Text bleibt selektier-/kopierbar (Strg+C, Strg+A)
+             - Trade-off: keine farbigen Sub-Strings mehr; alles in einer Farbe.
+               Wir behelfen uns über Prefixe ([NOTICE], [ERR]) für Lesbarkeit. -->
+        <TextBox Name="OutputBox"
+                 Grid.Row="0"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 TextWrapping="NoWrap"
+                 Background="Black"
+                 Foreground="#E0E0E0"
+                 BorderThickness="0"
+                 CaretBrush="Transparent"
+                 FontFamily="Cascadia Mono, Consolas, Menlo, Monospace"
+                 FontSize="12"
+                 Padding="6" />
 
         <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Background="Black" Margin="6,2,6,4">
             <TextBlock Grid.Column="0"

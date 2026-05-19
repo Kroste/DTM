@@ -43,15 +43,27 @@ public sealed class SshTerminalSession : ITerminalSession
             return Task.CompletedTask;
         }
 
-        IPrivateKeySource[] keys = SshKeyLocator.LoadKeys(msg => Notice?.Invoke(this, msg));
-        if (keys.Length == 0)
+        SshKeyLoadResult keyResult = SshKeyLocator.LoadKeys();
+
+        // Übersprungene Keys als Notice melden (nicht als Error: User weiß dann
+        // welche Datei warum nicht ging, kann das gezielt fixen).
+        foreach (string skip in keyResult.SkippedReasons)
+            Notice?.Invoke(this, "[" + skip + "]");
+
+        if (!keyResult.HasUsable)
         {
-            ErrorReceived?.Invoke(this,
-                "[Kein SSH-Key in ~/.ssh gefunden (id_ed25519, id_ecdsa, id_rsa). " +
-                "Lege einen Schlüssel an oder hinterlege einen passenden auf dem Zielserver.]");
+            string msg = keyResult.HasAnyFiles
+                ? $"[Keys gefunden ({string.Join(", ", keyResult.FoundFiles)}), aber keiner ist nutzbar. " +
+                  "Verschlüsselte Keys benötigen eine Passphrase unter 'Ssh.KeyPassphrases' in appsettings.json " +
+                  "(Schlüssel = Dateiname, z.B. \"id_rsa\": \"meinepassphrase\", oder \"*\" als Fallback).]"
+                : "[Kein SSH-Key in ~/.ssh gefunden (id_ed25519, id_ecdsa, id_rsa). " +
+                  "Lege einen Schlüssel an oder hinterlege einen passenden auf dem Zielserver.]";
+            ErrorReceived?.Invoke(this, msg);
             SessionEnded?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
         }
+
+        IPrivateKeySource[] keys = keyResult.UsableKeys;
 
         try
         {

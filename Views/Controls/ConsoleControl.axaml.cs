@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using DTM.Data.Terminal;
 using NLog;
+using SystemFile = System.IO.File;
 
 namespace DTM.Views.Controls;
 
@@ -154,6 +155,11 @@ public partial class ConsoleControl : UserControl
         }
 
         WireUp(_session);
+        // pwsh-Session am Bus registrieren, damit Hintergrund-Jobs (z.B. Backup)
+        // live im Tab erscheinen statt in einem unsichtbaren Subprozess.
+        if (Kind == TerminalKind.PowerShell)
+            TerminalBus.RegisterPowerShellSession(_session);
+
         _startedSignature = CurrentSignature();
         _ = _session.StartAsync();
     }
@@ -176,15 +182,19 @@ public partial class ConsoleControl : UserControl
 
     private void WireUp(ITerminalSession session)
     {
-        session.OutputReceived += (_, text) => Append(text, "#E0E0E0", appendNewline: false);
-        session.ErrorReceived  += (_, text) => Append(text, "indianred", appendNewline: false);
-        session.Notice         += (_, text) => Append(text, "lightskyblue", appendNewline: true);
-        session.SessionEnded   += (_, _)    => Append("[Session beendet]", "gray", appendNewline: true);
+        session.OutputReceived += (_, text) => Append(text, "OUT", appendNewline: false);
+        session.ErrorReceived  += (_, text) => Append(text, "ERR", appendNewline: false);
+        session.Notice         += (_, text) => Append(text, "NTC", appendNewline: true);
+        session.SessionEnded   += (_, _)    => Append("Session beendet", "NTC", appendNewline: true);
     }
 
     public void Stop()
     {
         if (_session is null) return;
+        // Bus-Registrierung zuerst lösen, damit kein Backup-Job nach Dispose
+        // versucht die tote Session zu nutzen.
+        if (Kind == TerminalKind.PowerShell)
+            TerminalBus.UnregisterPowerShellSession(_session);
         try { _session.Dispose(); }
         catch { /* swallow */ }
         _session = null;
@@ -195,14 +205,13 @@ public partial class ConsoleControl : UserControl
     {
         if (_session is null || !_session.IsRunning)
         {
-            Append("[Keine aktive Session]", "indianred", appendNewline: true);
+            Append("Keine aktive Session", "ERR", appendNewline: true);
             return;
         }
 
-        // Für PowerShell echoen wir den Befehl lokal, weil das in-process-Runspace
-        // keinen Prompt schreibt. Für SSH NICHT — das Remote-PTY echo't selbst.
-        if (Kind == TerminalKind.PowerShell)
-            Append($"> {cmd}", "lightgreen", appendNewline: true);
+        // Echo den Befehl lokal mit ">"-Prefix, für beide Tabs (auch SSH, weil
+        // wir nicht zuverlässig wissen, ob das Remote-PTY echo't).
+        Append($"> {cmd}", "ECHO", appendNewline: true);
 
         _ = _session.SendCommandAsync(cmd);
     }
@@ -217,18 +226,51 @@ public partial class ConsoleControl : UserControl
         SendCommand(cmd);
     }
 
-    private void Append(string? text, string color, bool appendNewline = false)
+    /// <summary>
+    /// Hängt Text an die Output-TextBox an. Marshalled korrekt auf den UI-Thread.
+    /// Schreibt zusätzlich ein Diagnose-Log nach %TEMP%/dtm-console.log, damit
+    /// im Problemfall nachvollziehbar ist, was wann angekommen ist - unabhängig
+    /// davon, ob die UI es darstellt.
+    /// </summary>
+    private void Append(string? text, string kind, bool appendNewline = false)
     {
         if (string.IsNullOrEmpty(text)) return;
+
+        // Diagnose-Log (best effort, niemals werfen).
+        try
+        {
+            string logPath = Path.Combine(Path.GetTempPath(), "dtm-console.log");
+            SystemFile.AppendAllText(logPath,
+                $"{DateTime.Now:HH:mm:ss.fff} [{kind}] {text.Replace("\r","\\r").Replace("\n","\\n")}{Environment.NewLine}");
+        }
+        catch { /* swallow */ }
+
+        string display = appendNewline ? text + Environment.NewLine : text;
+        // Für die Read-only-TextBox-Variante prefixen wir Meta-Streams,
+        // damit man sie vom Befehls-Output unterscheiden kann.
+        string prefixed = kind switch
+        {
+            "NTC"  => display,                // Notice-Meldungen sind ohnehin in [...]-Klammern
+            "ERR"  => "[ERR] " + display,
+            "ECHO" => display,                // "> cmd"-Echo unverändert
+            _      => display
+        };
+
+        // Wichtig: nicht Invoke (blocking, kann deadlocken), sondern Post.
         Dispatcher.UIThread.Post(() =>
         {
-            string display = appendNewline ? text + Environment.NewLine : text;
-            var run = new Avalonia.Controls.Documents.Run(display)
+            try
             {
-                Foreground = Avalonia.Media.Brush.Parse(color)
-            };
-            OutputBlock.Inlines?.Add(run);
-            OutputScroll.ScrollToEnd();
-        });
+                // Avalonia-TextBox kennt kein AppendText — String-Konkat reicht,
+                // weil TextBox.Text intern als Direct-Property korrekt invalidiert.
+                OutputBox.Text = (OutputBox.Text ?? string.Empty) + prefixed;
+                // Caret ans Ende; das löst auch das BringIntoView aus.
+                OutputBox.CaretIndex = OutputBox.Text.Length;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Append in OutputBox fehlgeschlagen.");
+            }
+        }, DispatcherPriority.Background);
     }
 }

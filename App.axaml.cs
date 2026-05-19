@@ -36,6 +36,10 @@ public partial class App : Application
     private static (Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers, IDTM_DATA data) BuildDataLayer()
     {
         AppSettings settings = LoadSettings();
+
+        // SSH-Settings für SshKeyLocator hinterlegen (kein DI im Locator).
+        DTM.Data.Terminal.SshRuntimeConfig.Current = settings.Ssh;
+
         Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers = new Dictionary<DB_SERVER.ServerTyp, DB_SERVER>();
 
         foreach (var (key, cfg) in settings.Servers)
