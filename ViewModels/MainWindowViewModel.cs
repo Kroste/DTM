@@ -29,12 +29,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _activeSessionsLabel = "Aktive Sessions: —";
     [ObservableProperty] private string _statusBar = "Bereit";
     [ObservableProperty] private string _backupButtonText = "Backup";
-    [ObservableProperty] private string _sshArguments = string.Empty;
+
+    // SSH-Ziel: explizit getrennt, weil das neue ConsoleControl Host/User separat
+    // erwartet (statt einer zusammengebauten "user@host"-Argumentzeile wie früher
+    // beim externen ssh.exe-Aufruf).
+    [ObservableProperty] private string _sshHost = string.Empty;
+    [ObservableProperty] private string _sshUser = string.Empty;
 
     private List<Session> _currentSessions = new();
 
+    // In-process PowerShell SDK kennt kein interaktives Get-Credential und kein
+    // Enter-PSSession. Daher: credential.xml ist Pflicht, und statt Enter-PSSession
+    // bauen wir eine persistente $session auf, durch die das ConsoleControl
+    // anschließend automatisch alle User-Befehle via Invoke-Command routet.
     public string ShellInitialCommand =>
-        $"$c = if (Test-Path \"$env:USERPROFILE\\credential.xml\") {{ Import-Clixml \"$env:USERPROFILE\\credential.xml\" }} else {{ Get-Credential }}; Enter-PSSession -ComputerName {_mssqlServer} -Credential $c";
+        $"if (-not (Test-Path \"$env:USERPROFILE\\credential.xml\")) {{ " +
+        $"  Write-Error 'credential.xml im Benutzerprofil fehlt. " +
+        $"Bitte einmalig erstellen: Get-Credential | Export-Clixml \"$env:USERPROFILE\\credential.xml\"'; " +
+        $"  return " +
+        $"}}; " +
+        $"$c = Import-Clixml \"$env:USERPROFILE\\credential.xml\"; " +
+        $"$session = New-PSSession -ComputerName {_mssqlServer} -Credential $c; " +
+        $"Write-Host \"Verbunden mit {_mssqlServer} — Befehle laufen automatisch via Invoke-Command -Session `$session\"";
 
     public MainWindowViewModel(IDTM_DATA data, Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers)
     {
@@ -56,7 +72,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             case DatabaseNodeViewModel db:
                 _ = LoadStatsAsync(db);
                 if (db.ServerTyp == DB_SERVER.ServerTyp.ORACLE && !string.IsNullOrWhiteSpace(db.Database.FQDN))
-                    SshArguments = $"oracle@{db.Database.FQDN}";
+                {
+                    SshHost = db.Database.FQDN;
+                    SshUser = "oracle";
+                }
                 break;
         }
     }
