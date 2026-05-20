@@ -22,10 +22,21 @@ namespace DTM.MSSQL
                     }
                 case ConnectionState.Closed:
 
-                    string driverFragment = OperatingSystem.IsWindows()
-                        ? "Driver=SQL Server"
-                        : "Driver={ODBC Driver 18 for SQL Server};TrustServerCertificate=yes";
-                    string con = $"{driverFragment};Server={Credential.Server};Database={Credential.Datenbank};UID={Credential.User};PWD={Credential.Password};";
+                    string con;
+                    if (!string.IsNullOrWhiteSpace(Credential.ConnectionString))
+                    {
+                        con = Credential.ConnectionString;
+                    }
+                    else
+                    {
+                        string driver = OperatingSystem.IsWindows()
+                            ? "SQL Server"
+                            : "ODBC Driver 18 for SQL Server";
+                        string authFragment = string.IsNullOrWhiteSpace(Credential.User)
+                            ? "Trusted_Connection=yes"
+                            : $"UID={Credential.User};PWD={Credential.Password}";
+                        con = $"Driver={{{driver}}};Server={Credential.Server};Database={Credential.Datenbank};{authFragment};";
+                    }
                     Connection.ConnectionString = con;
                     try
                     {
@@ -66,7 +77,7 @@ namespace DTM.MSSQL
             else
             {
                 _logger.Error("Keine Verbindung zur Datenbank");
-                throw new Exception("Keine Verbindung zur Datenbank");
+                throw new Exception("Keine Verbindung zur Datenbank");                
             }
         }
 

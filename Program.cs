@@ -22,6 +22,9 @@ internal static class Program
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
+
+
+        
         {
             _logger.Fatal(ex, "Unbehandelter Fehler beim App-Start.");
             throw;
