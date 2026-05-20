@@ -42,12 +42,11 @@ public static class TerminalBus
     /// <summary>
     /// Ruft eine FOC-SQL-Modulfunktion (Backup-Database, Set-Snapshot,
     /// Sync-Database-ToTest) im pwsh-Tab auf. Das Modul ist im Initial-Setup
-    /// bereits importiert; wir senden nur noch den Funktionsaufruf.
-    /// Der Aufruf läuft mit bypassSessionRouting (das Modul macht sein eigenes
-    /// Remoting). Output erscheint live im Tab.
+    /// bereits importiert; wir senden nur noch den Funktionsaufruf. Das Modul
+    /// macht sein eigenes Remoting zu den DB-Servern. Output erscheint live im Tab.
     /// </summary>
     /// <param name="functionName">z.B. "Backup-Database".</param>
-    /// <param name="database">Datenbankname.</param>
+    /// <param name="database">Datenbankname (MSSQL) bzw. FQDN (Oracle).</param>
     /// <param name="when">Geplanter Zeitpunkt oder null = sofort.</param>
     /// <param name="title">Header-Zeile im Tab.</param>
     /// <param name="onUnavailable">Fallback wenn kein pwsh-Tab aktiv ist.</param>
@@ -71,8 +70,7 @@ public static class TerminalBus
         }
 
         string call = FocSqlRuntime.BuildCall(functionName, database, when);
-        // bypassSessionRouting: das Modul baut sein eigenes Remoting auf.
-        _ = sess.SendCommandAsync(call, bypassSessionRouting: true);
+        _ = sess.SendCommandAsync(call);
     }
 
     /// <summary>
@@ -110,7 +108,7 @@ public static class TerminalBus
         if (!string.IsNullOrWhiteSpace(extraArgs))
             call += " " + extraArgs;
 
-        _ = sess.SendCommandAsync(call, bypassSessionRouting: true);
+        _ = sess.SendCommandAsync(call);
     }
 }
 

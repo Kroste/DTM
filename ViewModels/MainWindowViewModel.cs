@@ -14,7 +14,6 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private readonly IDTM_DATA _data;
-    private readonly string _mssqlServer;
 
     public ObservableCollection<NodeViewModelBase> RootNodes { get; } = new();
 
@@ -36,10 +35,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     //  1. ExecutionPolicy für DIESEN Prozess auf Bypass (nur Runspace-lokal,
     //     ändert nichts am System, braucht keine Admin-Rechte). Sonst scheitert
     //     der Modul-Import an "running scripts is disabled on this system".
-    //  2. credential.xml muss existieren (das FOC-SQL-Modul UND die interaktive
-    //     $session brauchen sie). Fehlt sie → klare Meldung, Abbruch.
-    //  3. FOC-SQL-Modul importieren — darüber laufen Backup/Clone/Snapshot.
-    //  4. Persistente $session für interaktive User-Befehle (Get-Service etc.).
+    //  2. credential.xml muss existieren — das FOC-SQL-Modul nutzt sie für sein
+    //     eigenes Remoting/Credential-Handling. Fehlt sie → klare Meldung.
+    //  3. FOC-SQL-Modul frisch von Samba laden — darüber laufen alle Aktionen.
+    //     Das Modul baut sein Remoting zu den Servern selbst auf; DTM hält
+    //     KEINE eigene PSSession mehr.
     public string ShellInitialCommand =>
         "try { Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction Stop } catch {}; " +
         "if (-not (Test-Path \"$env:USERPROFILE\\credential.xml\")) { " +
@@ -48,17 +48,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         "  return " +
         "}; " +
         DTM.Data.Terminal.FocSqlRuntime.BuildImportSnippet() + "; " +
-        "Write-Host 'FOC-SQL Modul geladen.'; " +
-        "$c = Import-Clixml \"$env:USERPROFILE\\credential.xml\"; " +
-        $"$session = New-PSSession -ComputerName {_mssqlServer} -Credential $c; " +
-        $"Write-Host \"Verbunden mit {_mssqlServer} — interaktive Befehle laufen via `$session\"";
+        "Write-Host 'FOC-SQL Modul geladen. Bereit.'";
 
     public MainWindowViewModel(IDTM_DATA data, Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers)
     {
         _data = data;
-        _mssqlServer = servers.TryGetValue(DB_SERVER.ServerTyp.MSSQL, out var sv)
-            ? sv.serverCredential?.Server ?? "FOC-SQL01"
-            : "FOC-SQL01";
         foreach (var typ in servers.Keys)
             RootNodes.Add(new ServerNodeViewModel(typ, data));
     }

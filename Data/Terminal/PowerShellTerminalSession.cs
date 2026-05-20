@@ -6,27 +6,17 @@ namespace DTM.Data.Terminal;
 
 /// <summary>
 /// Hostet PowerShell 7 in-process über Microsoft.PowerShell.SDK.
-/// Statt Process.Start + pwsh.exe läuft alles im selben Prozess; Variablen,
-/// Module und PSSession-Handles bleiben zwischen Befehlen erhalten.
+/// Statt Process.Start + pwsh.exe läuft alles im selben Prozess; Variablen
+/// und Module bleiben zwischen Befehlen erhalten.
 ///
-/// Hinweis zu remote: <c>Enter-PSSession</c> braucht eine Konsole und
-/// funktioniert in-process nicht. Stattdessen wird im InitialScript eine
-/// persistente PSSession in <c>$session</c> aufgebaut; jeder vom User
-/// getippte Befehl wird automatisch via <c>Invoke-Command -Session $session</c>
-/// remote ausgeführt (sofern <c>$session</c> existiert und offen ist).
+/// Befehle (Modulaufrufe wie Backup-Database UND vom User getippte Befehle)
+/// laufen lokal im Runspace. Das Remoting zu den DB-Servern übernimmt das
+/// FOC-SQL-Modul selbst — DTM hält keine eigene PSSession.
 /// </summary>
 public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusInjector
 {
     /// <summary>Optionales Setup-Skript, das einmal beim Start läuft.</summary>
     public string? InitialScript { get; }
-
-    /// <summary>
-    /// Wenn true (Default), wird jeder User-Befehl automatisch in
-    /// <c>Invoke-Command -Session $session -ScriptBlock {...}</c> verpackt,
-    /// sofern <c>$session</c> existiert und Open ist. So fühlt sich der Tab
-    /// wie ein klassisches <c>Enter-PSSession</c> an.
-    /// </summary>
-    public bool AutoRouteThroughSession { get; }
 
     private Runspace? _runspace;
     private readonly SemaphoreSlim _executionLock = new(1, 1);
@@ -45,10 +35,9 @@ public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusIn
 
     public bool IsRunning => _runspace?.RunspaceStateInfo.State == RunspaceState.Opened;
 
-    public PowerShellTerminalSession(string? initialScript = null, bool autoRouteThroughSession = true)
+    public PowerShellTerminalSession(string? initialScript = null)
     {
         InitialScript = initialScript;
-        AutoRouteThroughSession = autoRouteThroughSession;
     }
 
     // Defense in depth: falls die Telemetry-Opt-Out-Env-Variable aus irgendeinem
@@ -92,7 +81,7 @@ public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusIn
         }
     }
 
-    public async Task SendCommandAsync(string command, bool bypassSessionRouting = false, CancellationToken cancellationToken = default)
+    public async Task SendCommandAsync(string command, CancellationToken cancellationToken = default)
     {
         // Wenn gerade ein Befehl läuft, ist diese Eingabe eine Antwort auf einen
         // Read-Host/Confirm-Prompt des laufenden Befehls — NICHT ein neuer Befehl.
@@ -105,13 +94,9 @@ public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusIn
 
         if (string.IsNullOrWhiteSpace(command)) return;
 
-        // Routing-Entscheidung:
-        //  - bypassSessionRouting=true  → Befehl direkt lokal ausführen (er macht
-        //    sein eigenes Remoting, z.B. Backup). Trotzdem Out-String-Formatierung.
-        //  - sonst, wenn AutoRouteThroughSession → durch $session routen.
-        //  - sonst → lokal mit Out-String-Formatierung.
-        bool routeThroughSession = AutoRouteThroughSession && !bypassSessionRouting;
-        string script = WrapCommand(command, routeThroughSession);
+        // Alle Befehle laufen lokal im Runspace. Output wird durch Out-String
+        // formatiert. Remoting zu DB-Servern macht das FOC-SQL-Modul selbst.
+        string script = WrapCommand(command);
 
         await ExecuteRawAsync(script, cancellationToken).ConfigureAwait(false);
     }
@@ -122,36 +107,17 @@ public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusIn
     /// 'System.Diagnostics.Process'-ToString). Im SDK-Hosting fehlt sonst der
     /// Out-Default-Pfad, den pwsh.exe automatisch anhängt.
     ///
-    /// Wenn <paramref name="routeThroughSession"/> true ist UND eine offene
-    /// <c>$session</c> existiert, läuft der Befehl per <c>Invoke-Command
-    /// -Session $session</c> remote. Sonst lokal.
-    ///
-    /// WICHTIG: Skripte die ihr eigenes <c>New-PSSession</c>/<c>Invoke-Command</c>
-    /// aufbauen (Backup/Clone) MÜSSEN mit routeThroughSession=false laufen, sonst
-    /// entsteht ein PowerShell-Double-Hop (Credentials werden nicht weitergereicht,
-    /// Output geht verloren).
-    ///
     /// Der Befehl wird Base64-kodiert, um Quoting-Probleme zwischen C# und
-    /// PowerShell zu vermeiden.
+    /// PowerShell zu vermeiden. Ausführung immer lokal im Runspace.
     /// </summary>
-    private static string WrapCommand(string userCommand, bool routeThroughSession)
+    private static string WrapCommand(string userCommand)
     {
         string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(userCommand));
-
-        string invocation = routeThroughSession
-            ? @"if ($session -and $session.State -eq 'Opened') {
-        Invoke-Command -Session $session -ScriptBlock $__sb
-    } else {
-        & $__sb
-    }"
-            : "& $__sb";
 
         return $@"
 $__cmd = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String('{encoded}'))
 $__sb  = [scriptblock]::Create($__cmd)
-& {{
-    {invocation}
-}} | Out-String -Stream -Width 200
+& {{ & $__sb }} | Out-String -Stream -Width 200
 Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
 ";
     }

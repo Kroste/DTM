@@ -62,7 +62,7 @@ public partial class ConsoleControl : UserControl
         try
         {
             string? init = string.IsNullOrWhiteSpace(InitialScript) ? null : InitialScript;
-            _session = new PowerShellTerminalSession(init, autoRouteThroughSession: true);
+            _session = new PowerShellTerminalSession(init);
         }
         catch (Exception ex)
         {
