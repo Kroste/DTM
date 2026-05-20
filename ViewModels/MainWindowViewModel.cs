@@ -95,7 +95,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private void ApplyStats(Database_Stats stats)
+    internal void ApplyStats(Database_Stats stats)
     {
         _currentSessions = stats.Sessions ?? new List<Session>();
         ActiveSessionsCount = _currentSessions.Count.ToString();
@@ -108,7 +108,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             DbHost = m.Server ?? "—";
             DbStatus = m.State ?? "—";
             DbVersion = m.CompatibllityLevel.ToString();
-            DbSize = $"{m.DataSizeMB} MB";
+            DbSize = $"{m.DataSizeMB.ToString(System.Globalization.CultureInfo.InvariantCulture)} MB";
             RecoveryLabel = "Recovery";
             RecoveryOrArchiveMode = m.RecorveryModel ?? "—";
         }
@@ -119,7 +119,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             DbHost = o.Server ?? "—";
             DbStatus = o.State ?? "—";
             DbVersion = o.OracleVersion ?? "—";
-            DbSize = $"{o.DataSizeMB} MB";
+            DbSize = $"{o.DataSizeMB.ToString(System.Globalization.CultureInfo.InvariantCulture)} MB";
             RecoveryLabel = "ArchiveLog";
             RecoveryOrArchiveMode = o.ArchiveLogMode ?? "—";
         }
@@ -177,7 +177,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// MSSQL → DB-Name, Oracle → FQDN (das Modul baut daraus 'oracle@&lt;FQDN&gt;'
     /// als SSH-Ziel). Fällt bei fehlendem FQDN auf den Namen zurück.
     /// </summary>
-    private static string ModuleDatabaseId(DatabaseNodeViewModel db) =>
+    internal static string ModuleDatabaseId(DatabaseNodeViewModel db) =>
         db.ServerTyp == DB_SERVER.ServerTyp.MSSQL
             ? db.Database.Name
             : (string.IsNullOrWhiteSpace(db.Database.FQDN) ? db.Database.Name : db.Database.FQDN!);

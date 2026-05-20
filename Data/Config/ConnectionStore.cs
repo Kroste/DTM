@@ -7,7 +7,7 @@ namespace DTM.Config;
 
 public static class ConnectionStore
 {
-    private static readonly string _path = Path.Combine(
+    internal static string _path = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "DTM", "connections.json");
 
