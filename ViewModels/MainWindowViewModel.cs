@@ -30,22 +30,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _statusBar = "Bereit";
     [ObservableProperty] private string _backupButtonText = "Backup";
 
-    // SSH-Ziel: explizit getrennt, weil das neue ConsoleControl Host/User separat
-    // erwartet (statt einer zusammengebauten "user@host"-Argumentzeile wie früher
-    // beim externen ssh.exe-Aufruf).
-    [ObservableProperty] private string _sshHost = string.Empty;
-    [ObservableProperty] private string _sshUser = string.Empty;
-
     private List<Session> _currentSessions = new();
 
     // Initial-Setup der pwsh-Session:
-    //  1. credential.xml muss existieren (das FOC-SQL-Modul UND die interaktive
+    //  1. ExecutionPolicy für DIESEN Prozess auf Bypass (nur Runspace-lokal,
+    //     ändert nichts am System, braucht keine Admin-Rechte). Sonst scheitert
+    //     der Modul-Import an "running scripts is disabled on this system".
+    //  2. credential.xml muss existieren (das FOC-SQL-Modul UND die interaktive
     //     $session brauchen sie). Fehlt sie → klare Meldung, Abbruch.
-    //  2. FOC-SQL-Modul importieren — darüber laufen Backup/Clone/Snapshot.
-    //     Das Modul macht sein eigenes Remoting/Credential-Handling.
-    //  3. Persistente $session für interaktive User-Befehle (Get-Service etc.),
-    //     durch die das ConsoleControl tippt-Eingaben automatisch routet.
+    //  3. FOC-SQL-Modul importieren — darüber laufen Backup/Clone/Snapshot.
+    //  4. Persistente $session für interaktive User-Befehle (Get-Service etc.).
     public string ShellInitialCommand =>
+        "try { Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force -ErrorAction Stop } catch {}; " +
         "if (-not (Test-Path \"$env:USERPROFILE\\credential.xml\")) { " +
         "  Write-Error 'credential.xml im Benutzerprofil fehlt. " +
         "Bitte einmalig erstellen: Get-Credential | Export-Clixml \"$env:USERPROFILE\\credential.xml\"'; " +
@@ -76,11 +72,6 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 break;
             case DatabaseNodeViewModel db:
                 _ = LoadStatsAsync(db);
-                if (db.ServerTyp == DB_SERVER.ServerTyp.ORACLE && !string.IsNullOrWhiteSpace(db.Database.FQDN))
-                {
-                    SshHost = db.Database.FQDN;
-                    SshUser = "oracle";
-                }
                 break;
         }
     }

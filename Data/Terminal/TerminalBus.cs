@@ -1,14 +1,12 @@
-using DTM.Data.Terminal;
-
 namespace DTM.Data.Terminal;
 
 /// <summary>
-/// Singleton-Mediator zwischen Services (z.B. MSSQL-Backup) und der pwsh-Console
-/// im UI. Ein Service ruft <see cref="RunScript"/> mit einem PS-Skript; der
-/// aktuell registrierte <see cref="ITerminalSession"/> (siehe <see cref="RegisterPowerShellSession"/>)
-/// führt es aus, sodass der Output live im pwsh-Tab erscheint.
-/// Wenn kein pwsh-Tab läuft (Tab nie geöffnet, App noch nicht initialisiert),
-/// wird das Skript verworfen und ein optionaler Fallback-Logger aufgerufen.
+/// Singleton-Mediator zwischen den DTM-Aktionen (Backup/Clone/Snapshot etc.)
+/// und der pwsh-Console im UI. Die ViewModel ruft <see cref="RunFocSqlAction"/>
+/// bzw. <see cref="RunFocSqlSimple"/>; die aktuell registrierte
+/// <see cref="ITerminalSession"/> (siehe <see cref="RegisterPowerShellSession"/>)
+/// führt den FOC-SQL-Modulaufruf aus, sodass der Output live im pwsh-Tab erscheint.
+/// Wenn kein pwsh-Tab läuft, wird der optionale onUnavailable-Fallback aufgerufen.
 /// </summary>
 public static class TerminalBus
 {
@@ -39,45 +37,6 @@ public static class TerminalBus
     public static bool HasPowerShellSession
     {
         get { lock (_lock) return _powerShellSession is { IsRunning: true }; }
-    }
-
-    /// <summary>
-    /// Schickt ein PowerShell-Skript an die registrierte pwsh-Session.
-    /// Bei Erfolg sieht der User Befehl + Output im pwsh-Tab.
-    /// Falls noch keine Session existiert, wird <paramref name="onUnavailable"/>
-    /// aufgerufen (etwa um auf den alten <c>ExecuteLocalPs</c>-Pfad zurückzufallen).
-    /// </summary>
-    /// <param name="title">Kurze Beschreibung, wird als Header in den Tab geschrieben (optional).</param>
-    /// <param name="script">PowerShell-Skript.</param>
-    /// <param name="onUnavailable">Fallback wenn kein pwsh-Tab aktiv ist.</param>
-    public static void RunScript(string? title, string script, Action? onUnavailable = null)
-    {
-        ITerminalSession? sess;
-        lock (_lock) sess = _powerShellSession;
-
-        if (sess is null || !sess.IsRunning)
-        {
-            onUnavailable?.Invoke();
-            return;
-        }
-
-        // Header sichtbar machen über den Notice-Kanal. Output des Scripts
-        // selbst läuft danach durch die normale Pipeline und erscheint
-        // mit seinen Write-Host/Write-Output-Zeilen im Tab. Das Skript
-        // selbst (oft 30+ Zeilen Code) NICHT als Echo zeigen — das wäre
-        // unleserlicher Lärm; nur den Titel.
-        if (sess is ITerminalBusInjector injector)
-        {
-            if (!string.IsNullOrWhiteSpace(title))
-                injector.InjectNotice($"[Hintergrund-Job: {title}]");
-            injector.InjectNotice($"[Script läuft, Output folgt …]");
-        }
-
-        // Backup/Clone-Scripts bauen IHR EIGENES Remoting auf (New-PSSession +
-        // Invoke-Command). Daher bypassSessionRouting: true — sonst entsteht ein
-        // Double-Hop (Script läuft in $session-Remote, will dort nochmal
-        // New-PSSession aufbauen → Credentials fehlen → Output verschwindet).
-        _ = sess.SendCommandAsync(script, bypassSessionRouting: true);
     }
 
     /// <summary>

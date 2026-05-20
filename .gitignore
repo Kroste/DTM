@@ -1,68 +1,12 @@
-## ============================================
-## .gitignore für Visual Studio / .NET (C#)
-## ============================================
-
-# --- Visual Studio Cache / Optionen ---
-.vs/
-*.suo
+# Build-Artefakte
+bin/
+obj/
 *.user
-*.userosscache
-*.sln.docstates
-*.rsuser
-*.csproj.lscache
 
-# --- Build-Ergebnisse ---
-[Bb]in/
-[Oo]bj/
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Ll]og/
-[Ll]ogs/
-[Oo]ut/
-
-# --- NuGet ---
-*.nupkg
-*.snupkg
-**/[Pp]ackages/*
-!**/[Pp]ackages/build/
-*.nuget.props
-*.nuget.targets
-nuget.config
-
-# --- .NET Core / .NET 5+ ---
-project.lock.json
-project.fragment.lock.json
-artifacts/
-
-# --- Test-Ergebnisse ---
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
-coverage*.json
-coverage*.xml
-coverage*.info
-
-# --- ReSharper / Rider (falls jemand im Team das nutzt) ---
-_ReSharper*/
-*.[Rr]e[Ss]harper
-*.DotSettings.user
-.idea/
-
-# --- Roslyn / Compiler ---
-*.pdb
-*.dll
-*.exe
-
-# --- App-spezifisch ---
-# Lokale Credentials nicht einchecken (Vorlage: appsettings.example.json)
+# Lokale Konfiguration mit echten Zugangsdaten (NICHT einchecken!)
 appsettings.json
+
+# IDE
+.vs/
+.idea/
+*.suo

@@ -1,10 +1,11 @@
 namespace DTM.Data.Terminal;
 
 /// <summary>
-/// Gemeinsame Abstraktion über interaktive Terminal-Sessions
-/// (SSH via SSH.NET, PowerShell via Microsoft.PowerShell.SDK).
-/// Ersetzt das frühere Process.Start-mit-Pipes-Modell, das von
-/// SSH wegen fehlender PTY-Allokation abgewiesen wurde.
+/// Abstraktion über eine interaktive Terminal-Session (aktuell die in-process
+/// PowerShell-Session via Microsoft.PowerShell.SDK). Ersetzt das frühere
+/// Process.Start-mit-Pipes-Modell. Als Interface gehalten, damit das
+/// ConsoleControl und der TerminalBus nicht direkt an die konkrete
+/// Session-Klasse koppeln.
 /// </summary>
 public interface ITerminalSession : IDisposable
 {

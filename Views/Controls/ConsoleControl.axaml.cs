@@ -1,63 +1,25 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Threading;
 using DTM.Data.Terminal;
 using NLog;
 using SystemFile = System.IO.File;
 
 namespace DTM.Views.Controls;
 
-public enum TerminalKind
-{
-    Ssh,
-    PowerShell
-}
-
+/// <summary>
+/// PowerShell-Konsole im UI. Hält eine in-process <see cref="PowerShellTerminalSession"/>,
+/// zeigt deren Output farbig über die <see cref="AnsiConsole"/> an und schickt
+/// getippte Befehle (bzw. Antworten auf Read-Host-Prompts) an die Session.
+/// (Der frühere SSH-Modus wurde entfernt — alle Oracle-Befehle laufen über die
+/// FOC-SQL-Modulfunktionen, die ihr eigenes SSH-Remoting kapseln.)
+/// </summary>
 public partial class ConsoleControl : UserControl
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    // ----- Avalonia Properties --------------------------------------------------
-
-    public static readonly StyledProperty<TerminalKind> KindProperty =
-        AvaloniaProperty.Register<ConsoleControl, TerminalKind>(nameof(Kind), defaultValue: TerminalKind.Ssh);
-
-    public static readonly StyledProperty<string> HostProperty =
-        AvaloniaProperty.Register<ConsoleControl, string>(nameof(Host), defaultValue: string.Empty);
-
-    public static readonly StyledProperty<string> UserProperty =
-        AvaloniaProperty.Register<ConsoleControl, string>(nameof(User), defaultValue: string.Empty);
-
-    public static readonly StyledProperty<int> PortProperty =
-        AvaloniaProperty.Register<ConsoleControl, int>(nameof(Port), defaultValue: 22);
-
     public static readonly StyledProperty<string> InitialScriptProperty =
         AvaloniaProperty.Register<ConsoleControl, string>(nameof(InitialScript), defaultValue: string.Empty);
-
-    public TerminalKind Kind
-    {
-        get => GetValue(KindProperty);
-        set => SetValue(KindProperty, value);
-    }
-
-    public string Host
-    {
-        get => GetValue(HostProperty);
-        set => SetValue(HostProperty, value);
-    }
-
-    public string User
-    {
-        get => GetValue(UserProperty);
-        set => SetValue(UserProperty, value);
-    }
-
-    public int Port
-    {
-        get => GetValue(PortProperty);
-        set => SetValue(PortProperty, value);
-    }
 
     public string InitialScript
     {
@@ -65,11 +27,8 @@ public partial class ConsoleControl : UserControl
         set => SetValue(InitialScriptProperty, value);
     }
 
-    // ----- Internals ------------------------------------------------------------
-
     private ITerminalSession? _session;
-    private string? _startedSignature;       // dient als "Verbindungsfingerprint"
-    private bool _isAttached;
+    private string? _startedSignature;
     private bool _windowCloseRegistered;
 
     public ConsoleControl()
@@ -77,16 +36,10 @@ public partial class ConsoleControl : UserControl
         InitializeComponent();
     }
 
-    private string CurrentSignature() => Kind switch
-    {
-        TerminalKind.Ssh        => $"ssh|{User}@{Host}:{Port}",
-        TerminalKind.PowerShell => $"pwsh|{InitialScript.GetHashCode()}",
-        _ => "unknown"
-    };
+    private string CurrentSignature() => $"pwsh|{InitialScript.GetHashCode()}";
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _isAttached = true;
         base.OnAttachedToVisualTree(e);
 
         if (!_windowCloseRegistered && e.Root is Window w)
@@ -102,82 +55,28 @@ public partial class ConsoleControl : UserControl
         }
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        _isAttached = false;
-        // Session bleibt absichtlich am Leben, damit Tab-Wechsel die Verbindung nicht killt.
-        base.OnDetachedFromVisualTree(e);
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-
-        bool relevant = change.Property == HostProperty
-                     || change.Property == UserProperty
-                     || change.Property == PortProperty
-                     || change.Property == KindProperty
-                     || change.Property == InitialScriptProperty;
-
-        if (relevant && _isAttached && _startedSignature != CurrentSignature())
-        {
-            Stop();
-            Start();
-        }
-    }
-
-    // ----- Lifecycle ------------------------------------------------------------
-
     public void Start()
     {
         if (_session is { IsRunning: true }) return;
 
         try
         {
-            _session = Kind switch
-            {
-                TerminalKind.Ssh        => CreateSshSession(),
-                TerminalKind.PowerShell => CreatePowerShellSession(),
-                _ => null
-            };
+            string? init = string.IsNullOrWhiteSpace(InitialScript) ? null : InitialScript;
+            _session = new PowerShellTerminalSession(init, autoRouteThroughSession: true);
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Konnte Terminal-Session nicht erstellen.");
-            Append($"[Fehler beim Erstellen der Session: {ex.Message}]", "indianred");
-            return;
-        }
-
-        if (_session is null)
-        {
-            Append("[Kein Terminal-Backend für aktuelle Konfiguration]", "indianred");
+            _logger.Error(ex, "Konnte PowerShell-Session nicht erstellen.");
+            Append($"[Fehler beim Erstellen der Session: {ex.Message}]", "ERR", appendNewline: true);
             return;
         }
 
         WireUp(_session);
-        // pwsh-Session am Bus registrieren, damit Hintergrund-Jobs (z.B. Backup)
-        // live im Tab erscheinen statt in einem unsichtbaren Subprozess.
-        if (Kind == TerminalKind.PowerShell)
-            TerminalBus.RegisterPowerShellSession(_session);
+        // Session am Bus registrieren, damit Aktionen (Backup etc.) live im Tab erscheinen.
+        TerminalBus.RegisterPowerShellSession(_session);
 
         _startedSignature = CurrentSignature();
         _ = _session.StartAsync();
-    }
-
-    private ITerminalSession? CreateSshSession()
-    {
-        if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(User))
-        {
-            Append("[SSH: Bitte zuerst eine Oracle-Datenbank auswählen]", "gray", appendNewline: true);
-            return null;
-        }
-        return new SshTerminalSession(Host, User, Port);
-    }
-
-    private ITerminalSession CreatePowerShellSession()
-    {
-        string? init = string.IsNullOrWhiteSpace(InitialScript) ? null : InitialScript;
-        return new PowerShellTerminalSession(init, autoRouteThroughSession: true);
     }
 
     private void WireUp(ITerminalSession session)
@@ -191,10 +90,8 @@ public partial class ConsoleControl : UserControl
     public void Stop()
     {
         if (_session is null) return;
-        // Bus-Registrierung zuerst lösen, damit kein Backup-Job nach Dispose
-        // versucht die tote Session zu nutzen.
-        if (Kind == TerminalKind.PowerShell)
-            TerminalBus.UnregisterPowerShellSession(_session);
+        // Bus-Registrierung zuerst lösen, damit kein Job nach Dispose die tote Session nutzt.
+        TerminalBus.UnregisterPowerShellSession(_session);
         try { _session.Dispose(); }
         catch { /* swallow */ }
         _session = null;
@@ -209,12 +106,9 @@ public partial class ConsoleControl : UserControl
             return;
         }
 
-        // Echo den Befehl lokal — aber nur für PowerShell. Bei SSH echo't das
-        // Remote-PTY den Befehl selbst zurück (siehe v4-Logs); ein lokales
-        // Echo würde jeden Befehl doppelt anzeigen.
-        if (Kind == TerminalKind.PowerShell)
-            Append($"> {cmd}", "ECHO", appendNewline: true);
-
+        // Befehl lokal als Echo anzeigen. Wenn die Session gerade auf einen
+        // Read-Host-Prompt wartet, interpretiert sie die Eingabe als Antwort.
+        Append($"> {cmd}", "ECHO", appendNewline: true);
         _ = _session.SendCommandAsync(cmd);
     }
 
@@ -229,49 +123,41 @@ public partial class ConsoleControl : UserControl
     }
 
     /// <summary>
-    /// Routet Stream-Output an die <see cref="AnsiConsole"/> mit angemessenem
-    /// Styling. SSH-Output enthält ANSI-Codes, die der Parser farbig
-    /// interpretiert. Meta-Streams (Notice/Error/Echo) bekommen feste Farben.
+    /// Routet Stream-Output an die <see cref="AnsiConsole"/>. OUT wird ANSI-geparst
+    /// (Farben), Meta-Streams (Error/Notice/Echo) bekommen feste Farben.
     /// Zusätzlich Diagnose-Log nach %TEMP%/dtm-console.log.
     /// </summary>
     private void Append(string? text, string kind, bool appendNewline = false)
     {
         if (string.IsNullOrEmpty(text)) return;
 
-        // Diagnose-Log (best effort, niemals werfen).
         try
         {
             string logPath = Path.Combine(Path.GetTempPath(), "dtm-console.log");
             SystemFile.AppendAllText(logPath,
-                $"{DateTime.Now:HH:mm:ss.fff} [{kind}] {text.Replace("\r","\\r").Replace("\n","\\n")}{Environment.NewLine}");
+                $"{DateTime.Now:HH:mm:ss.fff} [{kind}] {text.Replace("\r", "\\r").Replace("\n", "\\n")}{Environment.NewLine}");
         }
         catch { /* swallow */ }
 
         string display = appendNewline ? text + "\n" : text;
         switch (kind)
         {
-            case "OUT":
-                // ANSI-Codes durch den Parser, Farben übernehmen.
-                Output.Append(display);
-                break;
             case "ERR":
-                Output.AppendLine(display, new AnsiStyle(
-                    Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0xCD, 0x5C, 0x5C)),
-                    Background: null, Bold: false, Italic: false, Underline: false));
+                Output.AppendLine(display, Style(0xCD, 0x5C, 0x5C, bold: false));
                 break;
             case "NTC":
-                Output.AppendLine(display, new AnsiStyle(
-                    Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0x87, 0xCE, 0xFA)),
-                    Background: null, Bold: false, Italic: false, Underline: false));
+                Output.AppendLine(display, Style(0x87, 0xCE, 0xFA, bold: false));
                 break;
             case "ECHO":
-                Output.AppendLine(display, new AnsiStyle(
-                    Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0x90, 0xEE, 0x90)),
-                    Background: null, Bold: true, Italic: false, Underline: false));
+                Output.AppendLine(display, Style(0x90, 0xEE, 0x90, bold: true));
                 break;
-            default:
+            default: // OUT
                 Output.Append(display);
                 break;
         }
     }
+
+    private static AnsiStyle Style(byte r, byte g, byte b, bool bold) =>
+        new(Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(r, g, b)),
+            Background: null, Bold: bold, Italic: false, Underline: false);
 }

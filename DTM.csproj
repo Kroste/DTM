@@ -25,8 +25,7 @@
     <!-- Tmds.DBus.Protocol bewusst auf 0.21.2; höhere Versionen brechen Avalonia 11.2.3.
          NU1903 (CVE-Hinweis) ist für uns unkritisch, da wir die Client-Seite nutzen. -->
     <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2" />
-    <!-- Terminal-Backends: reine .NET-Implementierungen statt Process.Start mit Pipes. -->
-    <PackageReference Include="SSH.NET" Version="2025.1.0" />
+    <!-- PowerShell-Backend: in-process Runspace statt Process.Start mit Pipes. -->
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.1" />
   </ItemGroup>
 

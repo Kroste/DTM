@@ -45,39 +45,6 @@ namespace DTM.ORACLE
             }
         }
 
-        public bool Backup_Database(Database_Info Database, DateTime backupTime)
-        {
-            string schedulerCommand = "/mnt/dbmgmt/scripts/run-generic-export.sh";
-
-            if (backupTime > DateTime.Now)
-            {
-                schedulerCommand = $"echo \"{schedulerCommand}\" | at {backupTime:HH:mm} {backupTime:dd.MM.yyyy}";
-            }
-
-            ExecuteRemoteSqlScript(Database.FQDN!, schedulerCommand);
-            return true;
-        }
-
-        public bool Clone_Database(Database_Info Database, DateTime cloneTime)
-        {
-            string schedulerCommand;
-            if (cloneTime > DateTime.Now)
-            {
-                string atTime = cloneTime.ToString("HH:mm dd.MM.yyyy");
-                schedulerCommand = "clone=$(ls -t /home/oracle/scripts/clone* | head -n1) && ";
-                schedulerCommand += $"if [[ -z \"$clone\" ]]; then echo \"kein Clone Script gefunden\"; else echo \"$clone\" | at {atTime}; fi";
-            }
-            else
-            {
-                schedulerCommand = "clone=$(ls -t /home/oracle/scripts/clone* | head -n1) && ";
-                schedulerCommand += "if [[ -z \"$clone\" ]]; then echo \"kein Clone Script gefunden\"; else bash \"$clone\"; fi";
-            }
-
-            ExecuteRemoteSqlScript(Database.FQDN!, schedulerCommand);
-            return true;
-        }
-
-
         public Database_Stats GetDatabase_Stats(Database_Info database)
         {
             var stats = new Database_Stats_ORACLE

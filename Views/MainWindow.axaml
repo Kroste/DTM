@@ -90,18 +90,11 @@
 
                 <GridSplitter Grid.Row="3" Background="Transparent" />
 
-                <!-- Console-Tabs -->
-                <TabControl Grid.Row="4">
-                    <TabItem Header="Shell (pwsh)">
-                        <ctrl:ConsoleControl Kind="PowerShell"
-                                             InitialScript="{Binding ShellInitialCommand}" />
-                    </TabItem>
-                    <TabItem Header="SSH">
-                        <ctrl:ConsoleControl Kind="Ssh"
-                                             Host="{Binding SshHost}"
-                                             User="{Binding SshUser}" />
-                    </TabItem>
-                </TabControl>
+                <!-- PowerShell-Konsole. Oracle-Befehle laufen ebenfalls über die
+                     FOC-SQL-Modulfunktionen (per SSH innerhalb der Funktionen),
+                     daher braucht es keinen separaten SSH-Tab mehr. -->
+                <ctrl:ConsoleControl Grid.Row="4"
+                                     InitialScript="{Binding ShellInitialCommand}" />
             </Grid>
         </Grid>
 
