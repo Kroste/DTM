@@ -17,4 +17,10 @@ public sealed class FocSqlConfig
     /// Leer = eingebauter Default-Glob in FocSqlRuntime.
     /// </summary>
     public string SambaSource { get; set; } = string.Empty;
+
+    /// <summary>
+    /// UNC-Pfad zum Update-Verzeichnis. Leer = kein automatischer Update-Check.
+    /// Muss version.txt und alle App-Dateien enthalten.
+    /// </summary>
+    public string UpdateSource { get; set; } = string.Empty;
 }

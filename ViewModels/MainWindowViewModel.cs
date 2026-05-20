@@ -288,6 +288,42 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         return await dlg.ShowDialog<TimePickResult>(owner);
     }
 
+    public async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            string src = DTM.Data.Terminal.FocSqlRuntime.Current.UpdateSource;
+            var newVersion = await DTM.Updater.UpdateService.CheckForUpdateAsync(src);
+            if (newVersion is not null)
+                await ShowUpdateDialogAsync(newVersion, src);
+        }
+        catch { /* Netzwerkfehler ignorieren */ }
+    }
+
+    private async Task ShowUpdateDialogAsync(Version newVersion, string updateSource)
+    {
+        Window? owner = GetMainWindow();
+        if (owner is null) return;
+
+        var current = System.Reflection.Assembly.GetExecutingAssembly()
+                            .GetName().Version ?? new Version(1, 0, 0);
+        var dlg = new UpdatePromptWindow(newVersion.ToString(), current.ToString(3));
+        await dlg.ShowDialog(owner);
+
+        switch (dlg.Result)
+        {
+            case UpdateDialogResult.ApplyNow:
+                DTM.Updater.UpdateService.ApplyUpdate(updateSource);
+                break;
+            case UpdateDialogResult.Later:
+                _ = Task.Delay(TimeSpan.FromMinutes(30))
+                        .ContinueWith(_ =>
+                            Dispatcher.UIThread.InvokeAsync(() =>
+                                ShowUpdateDialogAsync(newVersion, updateSource)));
+                break;
+        }
+    }
+
     private static Window? GetMainWindow()
         => (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 }

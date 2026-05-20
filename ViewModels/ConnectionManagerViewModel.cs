@@ -13,6 +13,7 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
 
     [ObservableProperty] private string _sambaSource = string.Empty;
     [ObservableProperty] private string _modulePath = string.Empty;
+    [ObservableProperty] private string _updateSource = string.Empty;
 
     public ConnectionManagerViewModel()
     {
@@ -22,11 +23,12 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
         FocSqlConfig foc = AppSettingsStore.LoadFocSql();
         _sambaSource = foc.SambaSource;
         _modulePath = foc.ModulePath;
+        _updateSource = foc.UpdateSource;
     }
 
     public void SaveFocSql()
     {
-        FocSqlConfig config = new() { SambaSource = SambaSource, ModulePath = ModulePath };
+        FocSqlConfig config = new() { SambaSource = SambaSource, ModulePath = ModulePath, UpdateSource = UpdateSource };
         AppSettingsStore.SaveFocSql(config);
         FocSqlRuntime.Current = config;
         TerminalBus.SendScript(FocSqlRuntime.BuildImportSnippet());
