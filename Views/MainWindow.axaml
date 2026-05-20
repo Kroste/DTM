@@ -34,8 +34,9 @@
                             <Button Grid.Column="1" Classes="action"
                                     Command="{Binding ManageConnectionsCommand}"
                                     ToolTip.Tip="Verbindungen verwalten"
-                                    Padding="8,4" FontSize="12">
-                                <TextBlock Text="&#x2699;" FontSize="14" VerticalAlignment="Center" />
+                                    Width="38" MinWidth="0" Padding="0">
+                                <TextBlock Text="&#x2699;" FontSize="14" VerticalAlignment="Center"
+                                           HorizontalAlignment="Center" />
                             </Button>
                         </Grid>
                     </Border>
