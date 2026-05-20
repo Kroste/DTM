@@ -5,7 +5,10 @@ namespace DTM.ViewModels;
 
 public sealed partial class EditConnectionViewModel : ViewModelBase
 {
-    [ObservableProperty] private string _key = string.Empty;
+    public static IReadOnlyList<DB_SERVER.ServerTyp> ServerTypes { get; } =
+        Enum.GetValues<DB_SERVER.ServerTyp>().ToArray();
+
+    [ObservableProperty] private DB_SERVER.ServerTyp _selectedServerType = DB_SERVER.ServerTyp.MSSQL;
     [ObservableProperty] private string _server = string.Empty;
     [ObservableProperty] private string _user = string.Empty;
     [ObservableProperty] private string _password = string.Empty;
@@ -16,7 +19,8 @@ public sealed partial class EditConnectionViewModel : ViewModelBase
 
     public EditConnectionViewModel(ConnectionEntry entry)
     {
-        _key = entry.Key;
+        _selectedServerType = Enum.TryParse<DB_SERVER.ServerTyp>(entry.Key, out var t)
+            ? t : DB_SERVER.ServerTyp.MSSQL;
         _server = entry.Server;
         _user = entry.User;
         _password = entry.PlainPassword;
@@ -28,7 +32,7 @@ public sealed partial class EditConnectionViewModel : ViewModelBase
     {
         ConnectionEntry e = new()
         {
-            Key = Key,
+            Key = SelectedServerType.ToString(),
             Server = Server,
             User = User,
             Database = Database,

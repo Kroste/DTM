@@ -12,7 +12,7 @@ public class EditConnectionViewModelTests
     {
         var vm = new EditConnectionViewModel
         {
-            Key = "MSSQL",
+            SelectedServerType = DB_SERVER.ServerTyp.MSSQL,
             Server = "sql01",
             User = "sa",
             Password = "secret",
@@ -67,5 +67,20 @@ public class EditConnectionViewModelTests
     {
         var vm = new EditConnectionViewModel { ConnectionString = "" };
         vm.ToEntry().ConnectionString.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Constructor_UnknownKey_DefaultsToMssql()
+    {
+        var entry = new ConnectionEntry { Key = "UNKNOWN", Server = "", User = "", Database = "" };
+        var vm = new EditConnectionViewModel(entry);
+        vm.SelectedServerType.Should().Be(DB_SERVER.ServerTyp.MSSQL);
+    }
+
+    [Fact]
+    public void ServerTypes_ContainsAllEnumValues()
+    {
+        EditConnectionViewModel.ServerTypes.Should().BeEquivalentTo(
+            Enum.GetValues<DB_SERVER.ServerTyp>());
     }
 }
