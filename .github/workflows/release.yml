@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+jobs:
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Tests ausführen
+        run: dotnet test DTM.Tests/DTM.Tests.csproj --logger "console;verbosity=normal"
+
+  build-windows:
+    name: Build Windows (win-x64)
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Publish win-x64
+        run: dotnet publish DTM.csproj -c Release -r win-x64 --self-contained true -o ./publish
+      - name: version.txt erstellen
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $version | Set-Content ./publish/version.txt -NoNewline
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DTM-windows
+          path: ./publish
+
+  build-linux:
+    name: Build Linux (linux-x64)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Publish linux-x64
+        run: dotnet publish DTM.csproj -c Release -r linux-x64 --self-contained true -o ./publish
+      - name: version.txt erstellen
+        run: echo -n "${GITHUB_REF_NAME#v}" > ./publish/version.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DTM-linux
+          path: ./publish
+
+  release:
+    name: GitHub Release erstellen
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: DTM-windows
+          path: ./DTM-windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: DTM-linux
+          path: ./DTM-linux
+      - name: Archive erstellen
+        run: |
+          cd DTM-windows
+          zip -r ../DTM-${{ github.ref_name }}-windows.zip .
+          cd ../DTM-linux
+          tar -czf ../DTM-${{ github.ref_name }}-linux.tar.gz .
+          cd ..
+      - name: GitHub Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --generate-notes \
+            "DTM-${{ github.ref_name }}-windows.zip" \
+            "DTM-${{ github.ref_name }}-linux.tar.gz"
