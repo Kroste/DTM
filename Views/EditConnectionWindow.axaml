@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:DTM.ViewModels"
+        mc:Ignorable="d"
+        x:Class="DTM.Views.EditConnectionWindow"
+        x:DataType="vm:EditConnectionViewModel"
+        Title="Verbindung bearbeiten"
+        Width="460" Height="340"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="*,Auto" Margin="20,16">
+
+        <Grid Grid.Row="0" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="140,*">
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Typ (z.B. MSSQL)" VerticalAlignment="Center" Margin="0,0,8,8" />
+            <TextBox   Grid.Row="0" Grid.Column="1" Text="{Binding Key, Mode=TwoWay}" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Server" VerticalAlignment="Center" Margin="0,0,8,8" />
+            <TextBox   Grid.Row="1" Grid.Column="1" Text="{Binding Server, Mode=TwoWay}" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Benutzer" VerticalAlignment="Center" Margin="0,0,8,8" />
+            <TextBox   Grid.Row="2" Grid.Column="1" Text="{Binding User, Mode=TwoWay}" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Passwort" VerticalAlignment="Center" Margin="0,0,8,8" />
+            <TextBox   Grid.Row="3" Grid.Column="1" Text="{Binding Password, Mode=TwoWay}"
+                       PasswordChar="●" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Datenbank" VerticalAlignment="Center" Margin="0,0,8,8" />
+            <TextBox   Grid.Row="4" Grid.Column="1" Text="{Binding Database, Mode=TwoWay}" Margin="0,0,0,8" />
+
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="ConnectionString" VerticalAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,0,8,0" />
+            <TextBox   Grid.Row="5" Grid.Column="1" Text="{Binding ConnectionString, Mode=TwoWay}"
+                       ToolTip.Tip="Optionaler ODBC-ConnectionString. Wenn gesetzt, werden Server/User/Passwort ignoriert." />
+        </Grid>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Spacing="8" Margin="0,16,0,0">
+            <Button Content="Abbrechen" Click="OnCancel" Width="100" />
+            <Button Content="Speichern" Click="OnSave" Width="100" IsDefault="True" />
+        </StackPanel>
+    </Grid>
+
+</Window>

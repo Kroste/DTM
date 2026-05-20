@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DTM.ViewModels.TreeNodes;
+using DTM.Config;
 using DTM.Views;
 using NLog;
 
@@ -233,6 +234,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase
                 Dispatcher.UIThread.Post(() =>
                     StatusBar = $"{label} nicht möglich: pwsh-Tab ist nicht bereit."));
         StatusBar = $"{label} für {db.Database.Name} gestartet — siehe Shell-Tab.";
+    }
+
+    [RelayCommand]
+    private async Task ManageConnections()
+    {
+        Window? owner = GetMainWindow();
+        if (owner is null) return;
+        ConnectionManagerWindow dlg = new() { DataContext = new ConnectionManagerViewModel() };
+        await dlg.ShowDialog(owner);
     }
 
     [RelayCommand]

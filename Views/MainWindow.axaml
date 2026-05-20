@@ -22,14 +22,22 @@
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                 <DockPanel>
                     <Border DockPanel.Dock="Top" Padding="18,16,18,10">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="&#x25A0;" FontSize="16"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       VerticalAlignment="Center" />
-                            <TextBlock Text="Datenbanken" FontSize="14" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="&#x25A0;" FontSize="16"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="Datenbanken" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Classes="action"
+                                    Command="{Binding ManageConnectionsCommand}"
+                                    ToolTip.Tip="Verbindungen verwalten"
+                                    Padding="8,4" FontSize="12">
+                                <TextBlock Text="&#x2699;" FontSize="14" VerticalAlignment="Center" />
+                            </Button>
+                        </Grid>
                     </Border>
                     <TreeView Background="Transparent"
                               Padding="8,0,8,8"
