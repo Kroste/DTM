@@ -110,6 +110,19 @@ public static class TerminalBus
 
         _ = sess.SendCommandAsync(call);
     }
+
+    /// <summary>
+    /// Sendet ein beliebiges PowerShell-Skript an die laufende Session.
+    /// Fire-and-forget — kein Fehler wenn kein Tab aktiv ist.
+    /// </summary>
+    public static void SendScript(string script)
+    {
+        if (string.IsNullOrWhiteSpace(script)) return;
+        ITerminalSession? sess;
+        lock (_lock) sess = _powerShellSession;
+        if (sess is null || !sess.IsRunning) return;
+        _ = sess.SendCommandAsync(script);
+    }
 }
 
 /// <summary>

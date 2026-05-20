@@ -14,7 +14,7 @@ namespace DTM.ViewModels;
 public sealed partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-    private readonly IDTM_DATA _data;
+    private IDTM_DATA _data;
 
     public ObservableCollection<NodeViewModelBase> RootNodes { get; } = new();
 
@@ -243,6 +243,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (owner is null) return;
         ConnectionManagerWindow dlg = new() { DataContext = new ConnectionManagerViewModel() };
         await dlg.ShowDialog(owner);
+        ReloadFromStores();
+    }
+
+    private void ReloadFromStores()
+    {
+        Dictionary<DB_SERVER.ServerTyp, DB_SERVER> newServers = new();
+        foreach (DTM.Config.ConnectionEntry entry in DTM.Config.ConnectionStore.Load())
+        {
+            if (Enum.TryParse<DB_SERVER.ServerTyp>(entry.Key, ignoreCase: true, out var typ))
+                newServers[typ] = new DB_SERVER(entry.ToCredential());
+        }
+
+        _data = new DTM_DATA(newServers, new ODBC_Factory());
+
+        SelectedNode = null;
+        RootNodes.Clear();
+        foreach (var typ in newServers.Keys)
+            RootNodes.Add(new ServerNodeViewModel(typ, _data));
+
+        DbName = "—"; DbHost = "—"; DbStatus = "—"; DbVersion = "—";
+        DbSize = "—"; RecoveryOrArchiveMode = "—"; ActiveSessionsCount = "0";
+        StatusBar = "Verbindungen aktualisiert.";
     }
 
     [RelayCommand]

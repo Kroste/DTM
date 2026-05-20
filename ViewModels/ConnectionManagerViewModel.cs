@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DTM.Config;
+using DTM.Data.Terminal;
 
 namespace DTM.ViewModels;
 
@@ -25,11 +26,10 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
 
     public void SaveFocSql()
     {
-        AppSettingsStore.SaveFocSql(new FocSqlConfig
-        {
-            SambaSource = SambaSource,
-            ModulePath = ModulePath
-        });
+        FocSqlConfig config = new() { SambaSource = SambaSource, ModulePath = ModulePath };
+        AppSettingsStore.SaveFocSql(config);
+        FocSqlRuntime.Current = config;
+        TerminalBus.SendScript(FocSqlRuntime.BuildImportSnippet());
     }
 
     public void AddEntry(ConnectionEntry entry)
