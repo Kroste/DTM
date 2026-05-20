@@ -74,6 +74,10 @@ Data/
   IDTM_DATA.cs
   IDTM_ODBC.cs
  Terminal/
+  AnsiPalette.cs
+  AnsiParser.cs
+  DtmPSHost.cs
+  FocSqlRuntime.cs
   ITerminalSession.cs
   PowerShellTerminalSession.cs
   SshKeyLocator.cs
@@ -89,13 +93,16 @@ ViewModels/
  MainWindowViewModel.cs
  SessionsViewModel.cs
  TimePickerViewModel.cs
+ TimePickResult.cs
  TreeNodes/
   DatabaseNodeViewModel.cs
   NodeViewModelBase.cs
   ServerNodeViewModel.cs
  ViewModelBase.cs
+Views/Controls/
+ AnsiConsole.cs
+ ConsoleControl.axaml.cs
 Views/
- Controls/ConsoleControl.axaml.cs
  MainWindow.axaml.cs
  SessionsWindow.axaml.cs
  TimePickerWindow.axaml.cs

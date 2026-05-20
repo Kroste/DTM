@@ -1,4 +1,5 @@
 using Avalonia.Media;
+using Avalonia.Media.Immutable;
 
 namespace DTM.Data.Terminal;
 
@@ -73,9 +74,10 @@ public static class AnsiPalette
 
     private static IBrush Brush(byte r, byte g, byte b)
     {
-        var br = new SolidColorBrush(Color.FromRgb(r, g, b));
-        // Brushes für maximale Performance einfrieren (kein Notify mehr nötig).
-        // In Avalonia 11 sind SolidColorBrushes von Haus aus shareable, also OK.
-        return br;
+        // ImmutableSolidColorBrush erbt NICHT von Animatable und hat damit keine
+        // UI-Thread-Affinität. Wichtig, weil die Palette beim ANSI-Parsing auch
+        // auf Background-Threads (z.B. SSH-Read-Loop) berührt wird. Ein normaler
+        // SolidColorBrush würde dort 'Call from invalid thread' werfen.
+        return new ImmutableSolidColorBrush(Color.FromRgb(r, g, b));
     }
 }

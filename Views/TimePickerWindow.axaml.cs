@@ -13,12 +13,17 @@ public partial class TimePickerWindow : Window
 
     private void OnOk(object? sender, RoutedEventArgs e)
     {
-        var result = (DataContext as TimePickerViewModel)?.ComposeDateTime();
-        Close(result);
+        var dt = (DataContext as TimePickerViewModel)?.ComposeDateTime() ?? DateTime.Now;
+        Close(TimePickResult.At(dt));
+    }
+
+    private void OnImmediate(object? sender, RoutedEventArgs e)
+    {
+        Close(TimePickResult.Immediate());
     }
 
     private void OnCancel(object? sender, RoutedEventArgs e)
     {
-        Close((DateTime?)null);
+        Close(TimePickResult.Cancel());
     }
 }

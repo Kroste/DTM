@@ -28,11 +28,13 @@ public sealed class AnsiConsole : UserControl
     private const int MaxLines = 5000;
 
     // Default-Farben für nicht-ANSI Text
-    private static readonly IBrush DefaultForeground = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
+    private static readonly IBrush DefaultForeground =
+        new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
 
     private readonly ScrollViewer _scroll;
     private readonly StackPanel _lines;
     private readonly AnsiParser _parser = new();
+    private readonly object _parserLock = new();
 
     // Wir bauen die aktuelle Zeile in diesem Builder auf, bis ein '\n' kommt.
     // Streaming-Output (z.B. SSH) liefert oft halbe Zeilen.
@@ -120,7 +122,11 @@ public sealed class AnsiConsole : UserControl
 
         // Parsen kann auf dem Background-Thread laufen, aber UI-Updates müssen
         // auf den UI-Thread. Ergebnisse vorab sammeln, dann posten.
-        var spans = _parser.Feed(text).ToList();
+        // Der Parser ist statefull und NICHT thread-safe — daher das Feed unter
+        // Lock, falls SSH-Read-Loop und Backup-Notice gleichzeitig anklopfen.
+        List<AnsiSpan> spans;
+        lock (_parserLock)
+            spans = _parser.Feed(text).ToList();
 
         Dispatcher.UIThread.Post(() =>
         {

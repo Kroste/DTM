@@ -176,7 +176,7 @@ public sealed class AnsiParser
                             && int.TryParse(parts[i + 3], out int g)
                             && int.TryParse(parts[i + 4], out int b24))
                         {
-                            IBrush b = new SolidColorBrush(Color.FromRgb((byte)r, (byte)g, (byte)b24));
+                            IBrush b = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb((byte)r, (byte)g, (byte)b24));
                             _currentStyle = isFg
                                 ? _currentStyle with { Foreground = b }
                                 : _currentStyle with { Background = b };

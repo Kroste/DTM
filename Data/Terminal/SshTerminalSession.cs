@@ -135,8 +135,9 @@ public sealed class SshTerminalSession : ITerminalSession
         }
     }
 
-    public Task SendCommandAsync(string command, CancellationToken cancellationToken = default)
+    public Task SendCommandAsync(string command, bool bypassSessionRouting = false, CancellationToken cancellationToken = default)
     {
+        // bypassSessionRouting ist nur für PowerShell relevant; bei SSH ignoriert.
         if (_shell is null || !_shell.CanWrite)
         {
             ErrorReceived?.Invoke(this, "[Keine aktive SSH-Session]");

@@ -23,6 +23,20 @@ public interface ITerminalSession : IDisposable
     bool IsRunning { get; }
 
     Task StartAsync(CancellationToken cancellationToken = default);
-    Task SendCommandAsync(string command, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sendet einen Befehl an die Session.
+    /// </summary>
+    /// <param name="command">Der auszuführende Befehl/Skript.</param>
+    /// <param name="bypassSessionRouting">
+    /// Nur für PowerShell relevant: wenn true, wird der Befehl NICHT durch das
+    /// automatische <c>Invoke-Command -Session $session</c>-Routing geleitet,
+    /// sondern direkt im lokalen Runspace ausgeführt. Wichtig für Skripte, die
+    /// ihr eigenes Remoting aufbauen (z.B. Backup), sonst entsteht ein
+    /// PowerShell-Double-Hop und der Output geht verloren.
+    /// </param>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    Task SendCommandAsync(string command, bool bypassSessionRouting = false, CancellationToken cancellationToken = default);
+
     Task StopAsync();
 }

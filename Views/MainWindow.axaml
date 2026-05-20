@@ -65,6 +65,22 @@
                                 Command="{Binding SnapshotCommand}"
                                 Width="120" Height="40" Margin="6"
                                 Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="Restore Snapshot"
+                                Command="{Binding RestoreSnapshotCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="Remove Snapshot"
+                                Command="{Binding RemoveSnapshotCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="ArchiveLog An"
+                                Command="{Binding ArchiveLogOnCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
+                        <Button Content="ArchiveLog Aus"
+                                Command="{Binding ArchiveLogOffCommand}"
+                                Width="120" Height="40" Margin="6"
+                                Background="Gold" Foreground="Black" FontWeight="Bold" />
                         <Button Content="DB → Samba"
                                 Command="{Binding DbToSambaCommand}"
                                 Width="120" Height="40" Margin="6"

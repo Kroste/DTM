@@ -256,17 +256,17 @@ public partial class ConsoleControl : UserControl
                 break;
             case "ERR":
                 Output.AppendLine(display, new AnsiStyle(
-                    Foreground: new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0xCD, 0x5C, 0x5C)),
+                    Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0xCD, 0x5C, 0x5C)),
                     Background: null, Bold: false, Italic: false, Underline: false));
                 break;
             case "NTC":
                 Output.AppendLine(display, new AnsiStyle(
-                    Foreground: new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x87, 0xCE, 0xFA)),
+                    Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0x87, 0xCE, 0xFA)),
                     Background: null, Bold: false, Italic: false, Underline: false));
                 break;
             case "ECHO":
                 Output.AppendLine(display, new AnsiStyle(
-                    Foreground: new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.FromRgb(0x90, 0xEE, 0x90)),
+                    Foreground: new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0x90, 0xEE, 0x90)),
                     Background: null, Bold: true, Italic: false, Underline: false));
                 break;
             default:

@@ -38,19 +38,24 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     private List<Session> _currentSessions = new();
 
-    // In-process PowerShell SDK kennt kein interaktives Get-Credential und kein
-    // Enter-PSSession. Daher: credential.xml ist Pflicht, und statt Enter-PSSession
-    // bauen wir eine persistente $session auf, durch die das ConsoleControl
-    // anschließend automatisch alle User-Befehle via Invoke-Command routet.
+    // Initial-Setup der pwsh-Session:
+    //  1. credential.xml muss existieren (das FOC-SQL-Modul UND die interaktive
+    //     $session brauchen sie). Fehlt sie → klare Meldung, Abbruch.
+    //  2. FOC-SQL-Modul importieren — darüber laufen Backup/Clone/Snapshot.
+    //     Das Modul macht sein eigenes Remoting/Credential-Handling.
+    //  3. Persistente $session für interaktive User-Befehle (Get-Service etc.),
+    //     durch die das ConsoleControl tippt-Eingaben automatisch routet.
     public string ShellInitialCommand =>
-        $"if (-not (Test-Path \"$env:USERPROFILE\\credential.xml\")) {{ " +
-        $"  Write-Error 'credential.xml im Benutzerprofil fehlt. " +
-        $"Bitte einmalig erstellen: Get-Credential | Export-Clixml \"$env:USERPROFILE\\credential.xml\"'; " +
-        $"  return " +
-        $"}}; " +
-        $"$c = Import-Clixml \"$env:USERPROFILE\\credential.xml\"; " +
+        "if (-not (Test-Path \"$env:USERPROFILE\\credential.xml\")) { " +
+        "  Write-Error 'credential.xml im Benutzerprofil fehlt. " +
+        "Bitte einmalig erstellen: Get-Credential | Export-Clixml \"$env:USERPROFILE\\credential.xml\"'; " +
+        "  return " +
+        "}; " +
+        DTM.Data.Terminal.FocSqlRuntime.BuildImportSnippet() + "; " +
+        "Write-Host 'FOC-SQL Modul geladen.'; " +
+        "$c = Import-Clixml \"$env:USERPROFILE\\credential.xml\"; " +
         $"$session = New-PSSession -ComputerName {_mssqlServer} -Credential $c; " +
-        $"Write-Host \"Verbunden mit {_mssqlServer} — Befehle laufen automatisch via Invoke-Command -Session `$session\"";
+        $"Write-Host \"Verbunden mit {_mssqlServer} — interaktive Befehle laufen via `$session\"";
 
     public MainWindowViewModel(IDTM_DATA data, Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers)
     {
@@ -133,49 +138,102 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private async Task Backup()
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
-
-        DateTime? when = await PickTimeAsync();
-        if (when is null) return;
-
-        StatusBar = $"Backup für {db.Database.Name} um {when:g} gestartet…";
-        try
-        {
-            bool ok = await Task.Run(() => _data.Backup_Database(db.ServerTyp, db.Database, when.Value));
-            StatusBar = ok ? $"Backup für {db.Database.Name} ausgelöst." : $"Backup für {db.Database.Name} fehlgeschlagen.";
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, $"Backup-Fehler für {db.Database.Name}.");
-            StatusBar = $"Fehler: {ex.Message}";
-        }
+        await RunDbActionAsync("Backup-Database", db, "Backup");
     }
 
     [RelayCommand]
     private async Task Clone()
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
-
-        DateTime? when = await PickTimeAsync();
-        if (when is null) return;
-
-        StatusBar = $"Clone für {db.Database.Name} um {when:g} gestartet…";
-        try
-        {
-            bool ok = await Task.Run(() => _data.Clone_Database(db.ServerTyp, db.Database, when.Value));
-            StatusBar = ok ? $"Clone für {db.Database.Name} ausgelöst." : $"Clone für {db.Database.Name} fehlgeschlagen.";
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, $"Clone-Fehler für {db.Database.Name}.");
-            StatusBar = $"Fehler: {ex.Message}";
-        }
+        await RunDbActionAsync("Sync-Database-ToTest", db, "Clone");
     }
 
     [RelayCommand]
-    private void Snapshot() => StatusBar = "Snapshot: noch nicht implementiert.";
+    private async Task Snapshot()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        await RunDbActionAsync("Set-Snapshot", db, "Snapshot");
+    }
+
+    /// <summary>
+    /// Gemeinsamer Pfad für Backup/Clone/Snapshot: Zeit abfragen, dann die
+    /// passende FOC-SQL-Modulfunktion über den TerminalBus im pwsh-Tab aufrufen.
+    /// Das Modul übernimmt Remoting, Credential-Handling und Scheduling.
+    /// </summary>
+    private async Task RunDbActionAsync(string focFunction, DatabaseNodeViewModel db, string label)
+    {
+        TimePickResult pick = await PickTimeAsync();
+        if (pick.Cancelled) return;
+
+        DateTime? when = pick.When; // null = sofort
+        string whenText = when is { } w ? $"um {w:g}" : "sofort";
+        StatusBar = $"{label} für {db.Database.Name} {whenText} …";
+
+        DTM.Data.Terminal.TerminalBus.RunFocSqlAction(
+            functionName: focFunction,
+            database: db.Database.Name,
+            when: when,
+            title: $"{label} {db.Database.Name}",
+            onUnavailable: () =>
+                Dispatcher.UIThread.Post(() =>
+                    StatusBar = $"{label} nicht möglich: pwsh-Tab ist nicht bereit."));
+
+        StatusBar = $"{label} für {db.Database.Name} ausgelöst.";
+    }
 
     [RelayCommand]
-    private void DbToSamba() => StatusBar = "DB → Samba: noch nicht implementiert.";
+    private void DbToSamba()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Copy-Database-ToSamba", db, "", "DB → Samba");
+    }
+
+    [RelayCommand]
+    private void RestoreSnapshot()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Restore-Snapshot", db, "", "Restore Snapshot");
+    }
+
+    [RelayCommand]
+    private void RemoveSnapshot()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Remove-Snapshot", db, "", "Remove Snapshot");
+    }
+
+    [RelayCommand]
+    private void ArchiveLogOn()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Set-Archive-Log", db, "", "ArchiveLog An");
+    }
+
+    [RelayCommand]
+    private void ArchiveLogOff()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Set-Archive-Log", db, "-Off", "ArchiveLog Aus");
+    }
+
+    /// <summary>
+    /// Aktionen ohne Zeitplanung (Restore/Remove/Archive/Samba). Teils
+    /// interaktiv — der Output und etwaige Prompts erscheinen im pwsh-Tab,
+    /// Antworten tippt der User in die Befehlszeile.
+    /// </summary>
+    private void RunSimpleAction(string focFunction, DatabaseNodeViewModel db, string extraArgs, string label)
+    {
+        StatusBar = $"{label} für {db.Database.Name} …";
+        DTM.Data.Terminal.TerminalBus.RunFocSqlSimple(
+            functionName: focFunction,
+            database: db.Database.Name,
+            extraArgs: extraArgs,
+            title: $"{label} {db.Database.Name}",
+            onUnavailable: () =>
+                Dispatcher.UIThread.Post(() =>
+                    StatusBar = $"{label} nicht möglich: pwsh-Tab ist nicht bereit."));
+        StatusBar = $"{label} für {db.Database.Name} gestartet — siehe Shell-Tab.";
+    }
 
     [RelayCommand]
     private async Task ShowSessions()
@@ -189,13 +247,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         await dlg.ShowDialog(owner);
     }
 
-    private async Task<DateTime?> PickTimeAsync()
+    private async Task<TimePickResult> PickTimeAsync()
     {
         Window? owner = GetMainWindow();
-        if (owner is null) return null;
+        if (owner is null) return TimePickResult.Cancel();
 
         TimePickerWindow dlg = new TimePickerWindow { DataContext = new TimePickerViewModel() };
-        return await dlg.ShowDialog<DateTime?>(owner);
+        return await dlg.ShowDialog<TimePickResult>(owner);
     }
 
     private static Window? GetMainWindow()

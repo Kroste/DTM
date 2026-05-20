@@ -39,6 +39,8 @@ public partial class App : Application
 
         // SSH-Settings für SshKeyLocator hinterlegen (kein DI im Locator).
         DTM.Data.Terminal.SshRuntimeConfig.Current = settings.Ssh;
+        // FOC-SQL-Modulpfad für den Backup/Clone/Snapshot-Pfad.
+        DTM.Data.Terminal.FocSqlRuntime.Current = settings.FocSql;
 
         Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers = new Dictionary<DB_SERVER.ServerTyp, DB_SERVER>();
 
