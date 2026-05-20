@@ -35,8 +35,8 @@
                                     Command="{Binding ManageConnectionsCommand}"
                                     ToolTip.Tip="Verbindungen verwalten"
                                     Width="38" MinWidth="0" Padding="0">
-                                <TextBlock Text="&#x2699;" FontSize="14" VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
+                                <TextBlock Classes="glyph" Text="&#x2699;" Margin="0"
+                                           FontSize="60" HorizontalAlignment="Center" />
                             </Button>
                         </Grid>
                     </Border>
