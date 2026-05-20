@@ -162,7 +162,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         DTM.Data.Terminal.TerminalBus.RunFocSqlAction(
             functionName: focFunction,
-            database: db.Database.Name,
+            database: ModuleDatabaseId(db),
             when: when,
             title: $"{label} {db.Database.Name}",
             onUnavailable: () =>
@@ -171,6 +171,16 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         StatusBar = $"{label} für {db.Database.Name} ausgelöst.";
     }
+
+    /// <summary>
+    /// Bezeichner, den die FOC-SQL-Modulfunktionen erwarten:
+    /// MSSQL → DB-Name, Oracle → FQDN (das Modul baut daraus 'oracle@&lt;FQDN&gt;'
+    /// als SSH-Ziel). Fällt bei fehlendem FQDN auf den Namen zurück.
+    /// </summary>
+    private static string ModuleDatabaseId(DatabaseNodeViewModel db) =>
+        db.ServerTyp == DB_SERVER.ServerTyp.MSSQL
+            ? db.Database.Name
+            : (string.IsNullOrWhiteSpace(db.Database.FQDN) ? db.Database.Name : db.Database.FQDN!);
 
     [RelayCommand]
     private void DbToSamba()
@@ -217,7 +227,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         StatusBar = $"{label} für {db.Database.Name} …";
         DTM.Data.Terminal.TerminalBus.RunFocSqlSimple(
             functionName: focFunction,
-            database: db.Database.Name,
+            database: ModuleDatabaseId(db),
             extraArgs: extraArgs,
             title: $"{label} {db.Database.Name}",
             onUnavailable: () =>

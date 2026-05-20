@@ -198,17 +198,16 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
             ps.Streams.Information.DataAdded += (_, e) =>
             {
                 var info = ps.Streams.Information[e.Index];
+
+                // Write-Host wird in PowerShell 5+ als Information-Record mit Tag
+                // "PSHOST" geführt UND zusätzlich über die Host-UI (DtmPSHostUI.Write)
+                // ausgegeben. Da der Custom-Host das bereits anzeigt, würde ein
+                // erneutes Ausgeben hier zu DOPPELTER Ausgabe führen → überspringen.
+                if (info.Tags?.Contains("PSHOST") == true) return;
+
                 string text = info.MessageData?.ToString() ?? string.Empty;
                 if (IsTelemetryNoise(text)) return;
-
-                // Write-Host landet in PowerShell 5+ als Information-Record mit Tag "PSHOST".
-                // Aus User-Sicht ist das normaler Console-Output (im Initial-Script z.B.
-                // unsere "Verbunden mit ..."-Meldung), nicht ein Meta-Notice.
-                bool isWriteHost = info.Tags?.Contains("PSHOST") == true;
-                if (isWriteHost)
-                    OutputReceived?.Invoke(this, text + Environment.NewLine);
-                else
-                    Notice?.Invoke(this, text);
+                Notice?.Invoke(this, text);
             };
             ps.Streams.Verbose.DataAdded += (_, e) =>
             {
