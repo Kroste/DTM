@@ -19,13 +19,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty] private NodeViewModelBase? _selectedNode;
 
-    [ObservableProperty] private string _dbName = "Datenbank: —";
-    [ObservableProperty] private string _dbHost = "Host: —";
-    [ObservableProperty] private string _dbStatus = "Status: —";
-    [ObservableProperty] private string _dbVersion = "Version: —";
-    [ObservableProperty] private string _dbSize = "Größe: —";
-    [ObservableProperty] private string _recoveryOrArchiveMode = "RecoveryModel: —";
+    [ObservableProperty] private string _dbName = "—";
+    [ObservableProperty] private string _dbHost = "—";
+    [ObservableProperty] private string _dbStatus = "—";
+    [ObservableProperty] private string _dbVersion = "—";
+    [ObservableProperty] private string _dbSize = "—";
+    [ObservableProperty] private string _recoveryOrArchiveMode = "—";
+    [ObservableProperty] private string _recoveryLabel = "Recovery";
     [ObservableProperty] private string _activeSessionsLabel = "Aktive Sessions: —";
+    [ObservableProperty] private string _activeSessionsCount = "0";
     [ObservableProperty] private string _statusBar = "Bereit";
     [ObservableProperty] private string _backupButtonText = "Backup";
 
@@ -95,27 +97,30 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private void ApplyStats(Database_Stats stats)
     {
         _currentSessions = stats.Sessions ?? new List<Session>();
+        ActiveSessionsCount = _currentSessions.Count.ToString();
         ActiveSessionsLabel = $"Aktive Sessions: {_currentSessions.Count}";
 
         if (stats is Database_Stats_MSSQL m)
         {
             BackupButtonText = "Backup";
-            DbName = $"Datenbank: {m.Name ?? "—"}";
-            DbHost = $"Host: {m.Server ?? "—"}";
-            DbStatus = $"Status: {m.State ?? "—"}";
-            DbVersion = $"Comp. Lvl.: {m.CompatibllityLevel}";
-            DbSize = $"Größe: {m.DataSizeMB} MB";
-            RecoveryOrArchiveMode = $"RecoveryModel: {m.RecorveryModel ?? "—"}";
+            DbName = m.Name ?? "—";
+            DbHost = m.Server ?? "—";
+            DbStatus = m.State ?? "—";
+            DbVersion = m.CompatibllityLevel.ToString();
+            DbSize = $"{m.DataSizeMB} MB";
+            RecoveryLabel = "Recovery";
+            RecoveryOrArchiveMode = m.RecorveryModel ?? "—";
         }
         else if (stats is Database_Stats_ORACLE o)
         {
             BackupButtonText = "Dump";
-            DbName = $"Instance: {o.InstanceName ?? "—"}";
-            DbHost = $"Host: {o.Server ?? "—"}";
-            DbStatus = $"Status: {o.State ?? "—"}";
-            DbVersion = $"Version: {o.OracleVersion ?? "—"}";
-            DbSize = $"Größe: {o.DataSizeMB} MB";
-            RecoveryOrArchiveMode = $"ArchiveLog: {o.ArchiveLogMode ?? "—"}";
+            DbName = o.InstanceName ?? "—";
+            DbHost = o.Server ?? "—";
+            DbStatus = o.State ?? "—";
+            DbVersion = o.OracleVersion ?? "—";
+            DbSize = $"{o.DataSizeMB} MB";
+            RecoveryLabel = "ArchiveLog";
+            RecoveryOrArchiveMode = o.ArchiveLogMode ?? "—";
         }
     }
 

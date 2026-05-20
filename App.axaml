@@ -1,15 +1,126 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DTM.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Dark">
 
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- ===== Aktions-Buttons (Standard) ===== -->
+        <Style Selector="Button.action">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="MinWidth" Value="124" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.12" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.action:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.action:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentDimBrush}" />
+        </Style>
+
+        <!-- Primär-Akzent-Variante (Backup, das häufigste) -->
+        <Style Selector="Button.action.primary">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.action.primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHoverBrush}" />
+        </Style>
+
+        <!-- Gefahr-Variante (Remove Snapshot) -->
+        <Style Selector="Button.action.danger:pointerover /template/ ContentPresenter">
+            <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+        </Style>
+
+        <!-- Glyph + Label innerhalb der Buttons -->
+        <Style Selector="Button.action TextBlock.glyph">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Margin" Value="0,0,9,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.action.primary TextBlock.glyph">
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+        </Style>
+
+        <!-- Gruppen-Überschrift über den Button-Reihen -->
+        <Style Selector="TextBlock.groupLabel">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="Margin" Value="2,0,0,6" />
+        </Style>
+
+        <!-- Info-Karte: Label/Wert-Zeilen -->
+        <Style Selector="TextBlock.infoLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="Width" Value="120" />
+        </Style>
+        <Style Selector="TextBlock.infoValue">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
     </Application.Styles>
 
     <Application.Resources>
         <ResourceDictionary>
+            <!-- ===== Zentrale Farbpalette (Dark, Teal-Akzent) ===== -->
+            <Color x:Key="AccentColor">#2DD4BF</Color>
+            <Color x:Key="AccentHoverColor">#5EEAD4</Color>
+            <Color x:Key="AccentDimColor">#1F4D47</Color>
+            <Color x:Key="OnAccentColor">#06231F</Color>
+            <Color x:Key="WindowBgColor">#0F1419</Color>
+            <Color x:Key="SurfaceColor">#161C23</Color>
+            <Color x:Key="SurfaceRaisedColor">#1D252E</Color>
+            <Color x:Key="SurfaceHoverColor">#27313C</Color>
+            <Color x:Key="BorderColor">#2A333D</Color>
+            <Color x:Key="TextPrimaryColor">#E8EDF2</Color>
+            <Color x:Key="TextMutedColor">#8B97A3</Color>
+            <Color x:Key="DangerColor">#F87171</Color>
+            <Color x:Key="OkColor">#34D399</Color>
+
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
+            <SolidColorBrush x:Key="AccentDimBrush" Color="{StaticResource AccentDimColor}" />
+            <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccentColor}" />
+            <SolidColorBrush x:Key="WindowBgBrush" Color="{StaticResource WindowBgColor}" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+            <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="{StaticResource SurfaceRaisedColor}" />
+            <SolidColorBrush x:Key="SurfaceHoverBrush" Color="{StaticResource SurfaceHoverColor}" />
+            <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+            <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+            <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+            <SolidColorBrush x:Key="OkBrush" Color="{StaticResource OkColor}" />
+
+            <!-- Fluent-Akzent überschreiben, damit Selektionen etc. ins Teal passen.
+                 WICHTIG: SystemAccentColor ist ein Color-Schlüssel (KEIN Brush!) –
+                 das FluentTheme leitet daraus intern seine Brushes ab. Hier einen
+                 Brush einzusetzen wirft eine InvalidCastException beim Laden. -->
+            <Color x:Key="SystemAccentColor">#2DD4BF</Color>
+
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://DTM/Views/Controls/DataTemplates.axaml" />
             </ResourceDictionary.MergedDictionaries>

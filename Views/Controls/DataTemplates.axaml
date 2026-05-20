@@ -5,11 +5,12 @@
     <TreeDataTemplate x:Key="NodeTemplate"
                       DataType="vm:NodeViewModelBase"
                       ItemsSource="{Binding Children}">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBlock Text="{Binding Header}" VerticalAlignment="Center" />
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+            <TextBlock Text="{Binding Header}" VerticalAlignment="Center" FontSize="13" />
             <TextBlock Text="(lädt…)"
                        FontStyle="Italic"
-                       Foreground="Gray"
+                       FontSize="11"
+                       Foreground="{DynamicResource TextMutedBrush}"
                        VerticalAlignment="Center"
                        IsVisible="{Binding IsLoading}" />
         </StackPanel>

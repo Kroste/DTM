@@ -9,97 +9,195 @@
         x:Class="DTM.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Datenbank-Manager"
-        Width="1280" Height="760"
-        MinWidth="960" MinHeight="600"
+        Width="1280" Height="780"
+        MinWidth="980" MinHeight="620"
+        Background="{DynamicResource WindowBgBrush}"
         WindowStartupLocation="CenterScreen">
 
     <Grid RowDefinitions="*,Auto">
-        <Grid Grid.Row="0" ColumnDefinitions="260,4,*">
-            <TreeView Grid.Column="0"
-                      ItemsSource="{Binding RootNodes}"
-                      SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
-                      ItemTemplate="{StaticResource NodeTemplate}">
-                <TreeView.Styles>
-                    <Style Selector="TreeViewItem" x:DataType="nodes:NodeViewModelBase">
-                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                    </Style>
-                </TreeView.Styles>
-            </TreeView>
+        <Grid Grid.Row="0" ColumnDefinitions="280,*">
 
-            <GridSplitter Grid.Column="1" Background="Transparent" />
+            <!-- ===== Seitenleiste: DB-Baum ===== -->
+            <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Padding="18,16,18,10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="&#x25A0;" FontSize="16"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="Datenbanken" FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <TreeView Background="Transparent"
+                              Padding="8,0,8,8"
+                              ItemsSource="{Binding RootNodes}"
+                              SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
+                              ItemTemplate="{StaticResource NodeTemplate}">
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem" x:DataType="nodes:NodeViewModelBase">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                            </Style>
+                        </TreeView.Styles>
+                    </TreeView>
+                </DockPanel>
+            </Border>
 
-            <Grid Grid.Column="2" RowDefinitions="220,4,80,4,*">
-                <!-- Info-Panel -->
-                <Border Grid.Row="0" Padding="20" Background="{DynamicResource SystemRegionBrush}">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="{Binding DbName}" FontSize="18" FontWeight="Bold" />
-                        <TextBlock Text="{Binding DbHost}" />
-                        <TextBlock Text="{Binding DbStatus}" />
-                        <TextBlock Text="{Binding DbVersion}" />
-                        <TextBlock Text="{Binding DbSize}" />
-                        <TextBlock Text="{Binding RecoveryOrArchiveMode}" />
-                        <Button Content="{Binding ActiveSessionsLabel}"
-                                Command="{Binding ShowSessionsCommand}"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="0"
-                                HorizontalAlignment="Left"
-                                Foreground="{DynamicResource SystemAccentColor}" />
+            <!-- ===== Hauptbereich ===== -->
+            <Grid Grid.Column="1" Margin="20,18,20,12" RowDefinitions="Auto,Auto,*">
+
+                <!-- Info-Karte -->
+                <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        CornerRadius="12" Padding="22,18">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="9">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="{Binding DbName}" FontSize="20" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                <Border VerticalAlignment="Center" CornerRadius="6"
+                                        Background="{DynamicResource AccentDimBrush}" Padding="9,3">
+                                    <TextBlock Text="{Binding DbStatus}" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AccentBrush}" />
+                                </Border>
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="infoLabel" Text="Host" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="infoValue" Text="{Binding DbHost}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="infoLabel" Text="Comp. Level" Margin="0,4,0,0" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="infoValue" Text="{Binding DbVersion}" Margin="0,4,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="infoLabel" Text="Größe" Margin="0,4,0,0" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="infoValue" Text="{Binding DbSize}" Margin="0,4,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="infoLabel" Text="{Binding RecoveryLabel}" Margin="0,4,0,0" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="infoValue" Text="{Binding RecoveryOrArchiveMode}" Margin="0,4,0,0" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Aktive Sessions als kleine Kachel -->
+                        <Border Grid.Column="1" VerticalAlignment="Top" CornerRadius="10"
+                                Background="{DynamicResource SurfaceRaisedBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                Padding="16,12">
+                            <Button Command="{Binding ShowSessionsCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    Cursor="Hand">
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="Aktive Sessions" FontSize="11"
+                                               Foreground="{DynamicResource TextMutedBrush}" />
+                                    <TextBlock Text="{Binding ActiveSessionsCount}" FontSize="22" FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentBrush}" />
+                                </StackPanel>
+                            </Button>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Aktions-Bereich -->
+                <Border Grid.Row="1" Margin="0,14,0,0" Padding="2">
+                    <StackPanel Spacing="14">
+                        <!-- Gruppe: Sicherung -->
+                        <StackPanel>
+                            <TextBlock Classes="groupLabel" Text="SICHERUNG" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="action primary" Command="{Binding BackupCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x2913;" />
+                                        <TextBlock Text="{Binding BackupButtonText}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action" Command="{Binding CloneCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x29C9;" />
+                                        <TextBlock Text="Clone" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action" Command="{Binding DbToSambaCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x2197;" />
+                                        <TextBlock Text="DB → Samba" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Gruppe: Snapshots -->
+                        <StackPanel>
+                            <TextBlock Classes="groupLabel" Text="SNAPSHOTS" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="action" Command="{Binding SnapshotCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x25C9;" />
+                                        <TextBlock Text="Snapshot" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action" Command="{Binding RestoreSnapshotCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x21BA;" />
+                                        <TextBlock Text="Restore" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action danger" Command="{Binding RemoveSnapshotCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x2715;" />
+                                        <TextBlock Text="Remove" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Gruppe: Archive-Log -->
+                        <StackPanel>
+                            <TextBlock Classes="groupLabel" Text="ARCHIVE-LOG" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="action" Command="{Binding ArchiveLogOnCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x25B6;" />
+                                        <TextBlock Text="Log An" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action" Command="{Binding ArchiveLogOffCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x25A0;" />
+                                        <TextBlock Text="Log Aus" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <GridSplitter Grid.Row="1" Background="Transparent" />
-
-                <!-- Action-Buttons -->
-                <Border Grid.Row="2" Padding="10">
-                    <WrapPanel Orientation="Horizontal">
-                        <Button Content="{Binding BackupButtonText}"
-                                Command="{Binding BackupCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="Clone"
-                                Command="{Binding CloneCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="Snapshot"
-                                Command="{Binding SnapshotCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="Restore Snapshot"
-                                Command="{Binding RestoreSnapshotCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="Remove Snapshot"
-                                Command="{Binding RemoveSnapshotCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="ArchiveLog An"
-                                Command="{Binding ArchiveLogOnCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="ArchiveLog Aus"
-                                Command="{Binding ArchiveLogOffCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                        <Button Content="DB → Samba"
-                                Command="{Binding DbToSambaCommand}"
-                                Width="120" Height="40" Margin="6"
-                                Background="Gold" Foreground="Black" FontWeight="Bold" />
-                    </WrapPanel>
+                <!-- Konsole -->
+                <Border Grid.Row="2" Margin="0,16,0,0" CornerRadius="12" ClipToBounds="True"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        Background="#0A0E12">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                                Padding="14,8">
+                            <StackPanel Orientation="Horizontal" Spacing="9">
+                                <TextBlock Text="&#x2328;" FontSize="14"
+                                           Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                                <TextBlock Text="PowerShell" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <ctrl:ConsoleControl InitialScript="{Binding ShellInitialCommand}" />
+                    </DockPanel>
                 </Border>
-
-                <GridSplitter Grid.Row="3" Background="Transparent" />
-
-                <!-- PowerShell-Konsole. Oracle-Befehle laufen ebenfalls über die
-                     FOC-SQL-Modulfunktionen (per SSH innerhalb der Funktionen),
-                     daher braucht es keinen separaten SSH-Tab mehr. -->
-                <ctrl:ConsoleControl Grid.Row="4"
-                                     InitialScript="{Binding ShellInitialCommand}" />
             </Grid>
         </Grid>
 
-        <Border Grid.Row="1" Padding="6,2" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
-            <TextBlock Text="{Binding StatusBar}" />
+        <!-- ===== Statusleiste ===== -->
+        <Border Grid.Row="1" Padding="20,7" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="9">
+                <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding StatusBar}" FontSize="12"
+                           Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+            </StackPanel>
         </Border>
     </Grid>
 

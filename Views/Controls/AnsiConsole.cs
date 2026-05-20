@@ -41,16 +41,20 @@ public sealed class AnsiConsole : UserControl
     private TextBlock? _currentLine;
     private bool _autoScroll = true;
 
+    // Konsolen-Hintergrundton, abgestimmt auf das Dark-Theme (statt reinem Schwarz).
+    private static readonly IBrush ConsoleBg =
+        new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.FromRgb(0x0A, 0x0E, 0x12));
+
     public AnsiConsole()
     {
         _lines = new StackPanel
         {
             Orientation = Avalonia.Layout.Orientation.Vertical,
-            Background = Brushes.Black
+            Background = ConsoleBg
         };
         _scroll = new ScrollViewer
         {
-            Background = Brushes.Black,
+            Background = ConsoleBg,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = _lines
@@ -68,7 +72,7 @@ public sealed class AnsiConsole : UserControl
         // Strg+C kopiert den gesamten Output.
         ContextMenu = BuildContextMenu();
 
-        Background = Brushes.Black;
+        Background = ConsoleBg;
         Content = _scroll;
     }
 
