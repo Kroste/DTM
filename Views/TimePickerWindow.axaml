@@ -7,23 +7,43 @@
         x:Class="DTM.Views.TimePickerWindow"
         x:DataType="vm:TimePickerViewModel"
         Title="Zeit wählen"
-        Width="320" Height="220"
+        Width="320" Height="260"
         CanResize="False"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="BorderOnly">
 
-    <Grid RowDefinitions="*,Auto" Margin="16">
-        <StackPanel Grid.Row="0" Spacing="10">
-            <TextBlock Text="Datum" />
-            <CalendarDatePicker SelectedDate="{Binding SelectedDate, Mode=TwoWay}" HorizontalAlignment="Stretch" />
-            <TextBlock Text="Uhrzeit" />
-            <TimePicker SelectedTime="{Binding SelectedTime, Mode=TwoWay}" HorizontalAlignment="Stretch" />
-        </StackPanel>
+    <Grid RowDefinitions="Auto,*">
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
-            <Button Content="Abbrechen" Click="OnCancel" Width="90" />
-            <Button Content="Sofort" Click="OnImmediate" Width="90" />
-            <Button Content="Geplant" Click="OnOk" Width="90" IsDefault="True" />
-        </StackPanel>
+        <!-- Titelleiste -->
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                PointerPressed="OnTitleBarPointerPressed">
+            <Grid ColumnDefinitions="*,Auto" Height="36">
+                <TextBlock Grid.Column="0"
+                           Text="Zeit wählen" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           VerticalAlignment="Center" Margin="14,0"
+                           IsHitTestVisible="False" />
+                <Button Grid.Column="1" Classes="titleBtn close"
+                        Click="OnTitleClose" Content="&#x2715;" />
+            </Grid>
+        </Border>
+
+        <!-- Inhalt -->
+        <Grid Grid.Row="1" RowDefinitions="*,Auto" Margin="16">
+            <StackPanel Grid.Row="0" Spacing="10">
+                <TextBlock Text="Datum" />
+                <CalendarDatePicker SelectedDate="{Binding SelectedDate, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                <TextBlock Text="Uhrzeit" />
+                <TimePicker SelectedTime="{Binding SelectedTime, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+                <Button Content="Abbrechen" Click="OnCancel" Width="90" />
+                <Button Content="Sofort" Click="OnImmediate" Width="90" />
+                <Button Content="Geplant" Click="OnOk" Width="90" IsDefault="True" />
+            </StackPanel>
+        </Grid>
     </Grid>
 
 </Window>

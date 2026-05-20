@@ -13,9 +13,7 @@
         MinWidth="980" MinHeight="620"
         Background="{DynamicResource WindowBgBrush}"
         WindowStartupLocation="CenterScreen"
-        ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome"
-        ExtendClientAreaTitleBarHeightHint="-1">
+        SystemDecorations="BorderOnly">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
