@@ -44,15 +44,32 @@ public static class UpdateService
         return null;
     }
 
-    public static void ApplyUpdate(string updateSource)
+    public static async Task ApplyUpdateAsync(string updateSource,
+        IProgress<(int Done, int Total, string File)>? progress = null)
     {
         string tempDir = Path.Combine(Path.GetTempPath(), "DTM_Update");
         string exeDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         _logger.Info("Update wird angewendet: Quelle={0}, Ziel={1}", updateSource, exeDir);
         try
         {
+            var files = await Task.Run(() => CollectChangedFiles(updateSource, exeDir));
+            _logger.Info("Update: {0} geänderte / neue Dateien werden kopiert.", files.Count);
+
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-            CopyDirectory(updateSource, tempDir);
+            Directory.CreateDirectory(tempDir);
+
+            await Task.Run(() =>
+            {
+                for (int i = 0; i < files.Count; i++)
+                {
+                    string rel = Path.GetRelativePath(updateSource, files[i]);
+                    string dst = Path.Combine(tempDir, rel);
+                    Directory.CreateDirectory(Path.GetDirectoryName(dst)!);
+                    SystemFile.Copy(files[i], dst, overwrite: true);
+                    progress?.Report((i + 1, files.Count, rel));
+                    _logger.Debug("Kopiert: {0}", rel);
+                }
+            });
 
             int pid = Environment.ProcessId;
             string scriptPath = Path.Combine(Path.GetTempPath(), "dtm_update.ps1");
@@ -90,12 +107,34 @@ public static class UpdateService
         }
     }
 
-    private static void CopyDirectory(string src, string dst)
+    private static List<string> CollectChangedFiles(string sourceDir, string currentExeDir)
     {
-        Directory.CreateDirectory(dst);
-        foreach (string file in Directory.GetFiles(src))
-            SystemFile.Copy(file, Path.Combine(dst, Path.GetFileName(file)), overwrite: true);
-        foreach (string dir in Directory.GetDirectories(src))
-            CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
+        var result = new List<string>();
+        CollectChangedFilesRecursive(sourceDir, sourceDir, currentExeDir, result);
+        return result;
+    }
+
+    private static void CollectChangedFilesRecursive(
+        string rootSource, string currentSource, string currentExeDir, List<string> result)
+    {
+        foreach (string srcFile in Directory.GetFiles(currentSource))
+        {
+            string rel = Path.GetRelativePath(rootSource, srcFile);
+            string exeFile = Path.Combine(currentExeDir, rel);
+
+            if (!SystemFile.Exists(exeFile))
+            {
+                result.Add(srcFile);
+                continue;
+            }
+
+            var srcInfo = new FileInfo(srcFile);
+            var dstInfo = new FileInfo(exeFile);
+            if (srcInfo.Length != dstInfo.Length ||
+                srcInfo.LastWriteTimeUtc > dstInfo.LastWriteTimeUtc)
+                result.Add(srcFile);
+        }
+        foreach (string dir in Directory.GetDirectories(currentSource))
+            CollectChangedFilesRecursive(rootSource, dir, currentExeDir, result);
     }
 }

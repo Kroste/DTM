@@ -66,8 +66,11 @@ public partial class AboutWindow : Window
 
             if (dlg.Result == UpdateDialogResult.ApplyNow)
             {
-                Close();
-                UpdateService.ApplyUpdate(src);
+                UpdateCheckButton.IsEnabled = false;
+                UpdateStatusText.Text = "Update wird kopiert …";
+                var applyProgress = new Progress<(int Done, int Total, string File)>(p =>
+                    UpdateStatusText.Text = $"Kopiere {p.Done}/{p.Total}: {p.File}");
+                await UpdateService.ApplyUpdateAsync(src, applyProgress);
             }
             else if (dlg.Result == UpdateDialogResult.Later)
             {

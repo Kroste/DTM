@@ -336,7 +336,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             case UpdateDialogResult.ApplyNow:
                 _logger.Info("Update wird jetzt angewendet: {0}", newVersion);
-                DTM.Updater.UpdateService.ApplyUpdate(updateSource);
+                var applyProgress = new Progress<(int Done, int Total, string File)>(p =>
+                    StatusBar = $"Update: {p.Done}/{p.Total} — {p.File}");
+                await DTM.Updater.UpdateService.ApplyUpdateAsync(updateSource, applyProgress);
                 break;
             case UpdateDialogResult.Later:
                 _logger.Info("Update auf {0} auf später verschoben (30 min).", newVersion);
