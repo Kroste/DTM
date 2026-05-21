@@ -17,6 +17,8 @@ namespace DTM.Data.Terminal;
 public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusInjector
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+    // Separater Logger für PS-Ein-/Ausgaben → powershell.log
+    //private static readonly ILogger _psLogger = LogManager.GetLogger("DTM.PSOutput");
 
     /// <summary>Optionales Setup-Skript, das einmal beim Start läuft.</summary>
     public string? InitialScript { get; }
@@ -153,6 +155,7 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
                 if (obj is null) return;
                 string text = obj.ToString();
                 if (IsTelemetryNoise(text)) return;
+                _logger.Debug(text);
                 OutputReceived?.Invoke(this, text + Environment.NewLine);
             };
 
@@ -161,6 +164,7 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
                 var err = ps.Streams.Error[e.Index];
                 string text = err.ToString();
                 if (IsTelemetryNoise(text)) return;
+                _logger.Warn("ERROR: {0}", text);
                 ErrorReceived?.Invoke(this, text + Environment.NewLine);
             };
             ps.Streams.Warning.DataAdded += (_, e) =>
@@ -242,5 +246,9 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
     /// Erlaubt dem TerminalBus, Hintergrund-Job-Header in den Output-Stream
     /// einzuschleusen, ohne dass dafür ein PS-Befehl ausgeführt werden muss.
     /// </summary>
-    public void InjectNotice(string text) => Notice?.Invoke(this, text);
+    public void InjectNotice(string text)
+    {
+        _logger.Info(text);
+        Notice?.Invoke(this, text);
+    }
 }

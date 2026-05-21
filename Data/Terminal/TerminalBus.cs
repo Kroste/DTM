@@ -69,11 +69,12 @@ public static class TerminalBus
             return;
         }
 
-        _logger.Info("TerminalBus: {0} für '{1}'", functionName, database);
+        string timing = when.HasValue ? $"geplant {when.Value:g}" : "sofort";
+        _logger.Info("TerminalBus: {0} für '{1}' ({2})", functionName, database, timing);
 
         if (sess is ITerminalBusInjector injector)
         {
-            injector.InjectNotice($"[Hintergrund-Job: {title}]");
+            injector.InjectNotice($"[Hintergrund-Job: {title} — {timing}]");
             injector.InjectNotice("[Script läuft, Output folgt …]");
         }
 
