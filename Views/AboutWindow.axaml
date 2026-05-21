@@ -38,7 +38,7 @@
                     <TextBlock Text="Landeshauptstadt Potsdam"
                                FontSize="14" FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
-                    <TextBlock Text="Fachbereich 54.2"
+                    <TextBlock Text="Fachbereich 54"
                                FontSize="12"
                                Foreground="{DynamicResource TextMutedBrush}" />
                 </StackPanel>
@@ -73,7 +73,7 @@
                 <TextBlock Grid.Row="1" Grid.Column="0" Classes="infoLabel"
                            Text="Fachbereich" Margin="0,4,0,0" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Classes="infoValue"
-                           Text="54.2" Margin="0,4,0,0" />
+                           Text="5422 IT-Basis-Infrastruktur" Margin="0,4,0,0" />
             </Grid>
 
             <!-- Update-Bereich -->
@@ -94,7 +94,7 @@
             <!-- Footer -->
             <TextBlock HorizontalAlignment="Center" Margin="0,14,0,0"
                        FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
-                       Text="&#x00A9; 2025 Landeshauptstadt Potsdam" />
+                       Text="&#x00A9; 2026 Landeshauptstadt Potsdam" />
 
         </StackPanel>
     </Grid>
