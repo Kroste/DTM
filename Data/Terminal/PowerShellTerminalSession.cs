@@ -17,9 +17,6 @@ namespace DTM.Data.Terminal;
 public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusInjector
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-    // Separater Logger für PS-Ein-/Ausgaben → powershell.log
-    //private static readonly ILogger _psLogger = LogManager.GetLogger("DTM.PSOutput");
-
     /// <summary>Optionales Setup-Skript, das einmal beim Start läuft.</summary>
     public string? InitialScript { get; }
 
@@ -62,7 +59,7 @@ public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusIn
         {
             // Host-UI-Callbacks: Prompt-Texte und Host-Output gehen an unsere Events.
             _hostUi.OnOutput = text => { if (!IsTelemetryNoise(text)) OutputReceived?.Invoke(this, text); };
-            _hostUi.OnError  = text => { if (!IsTelemetryNoise(text)) ErrorReceived?.Invoke(this, text); };
+            _hostUi.OnError = text => { if (!IsTelemetryNoise(text)) ErrorReceived?.Invoke(this, text); };
             _hostUi.OnPrompt = text => OutputReceived?.Invoke(this, text);
 
             // Runspace mit Custom-Host: ermöglicht Read-Host/Confirm/PromptForChoice
