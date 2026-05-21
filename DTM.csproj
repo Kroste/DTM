@@ -34,8 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.json')" />
-    <None Update="appsettings.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Nlog.config" CopyToOutputDirectory="PreserveNewest"/>
+    <!--<None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.json')" />
+    <None Update="appsettings.example.json" CopyToOutputDirectory="PreserveNewest" />-->
   </ItemGroup>
 
 </Project>

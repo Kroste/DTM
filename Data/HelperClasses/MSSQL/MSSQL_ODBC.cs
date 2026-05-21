@@ -68,7 +68,14 @@ namespace DTM.MSSQL
 
                 using (OdbcDataAdapter ad = new(SQL, Connection))
                 {
+                    try{
                     ad.Fill(dt);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex.Message);
+                        throw new Exception($"Fehler bei SQL-Ausführung: {ex.Message}");
+                    }
                 }
 
                 return dt;
