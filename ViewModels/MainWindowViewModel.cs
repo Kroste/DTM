@@ -109,8 +109,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         if (stats is Database_Stats_MSSQL m)
         {
-            ArchiveLogOnEnabled = false;
-            ArchiveLogOffEnabled = false;
+            bool recoveryOn = string.Equals(m.RecorveryModel, "FULL", StringComparison.OrdinalIgnoreCase);
+            ArchiveLogOnEnabled  = !recoveryOn;
+            ArchiveLogOffEnabled =  recoveryOn;
             BackupButtonText = "Backup";
             DbName = m.Name ?? "—";
             DbHost = m.Server ?? "—";

@@ -32,7 +32,7 @@
             <StackPanel x:Name="OrgPanel" Orientation="Horizontal"
                         Spacing="16" HorizontalAlignment="Center">
                 <Image x:Name="LogoImage" Width="68" Height="68"
-                       VerticalAlignment="Center"
+                       VerticalAlignment="Center" 
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
                 <StackPanel VerticalAlignment="Center" Spacing="5">
                     <TextBlock Text="Landeshauptstadt Potsdam"

@@ -5,8 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.0.5</Version>
-    <AssemblyVersion>1.0.0.5</AssemblyVersion>
+    <Version>1.0.6</Version>
+    <AssemblyVersion>1.0.0.6</AssemblyVersion>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <DefaultItemExcludes>$(DefaultItemExcludes);DTM.Tests\**</DefaultItemExcludes>
@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <None Update="Nlog.config" CopyToOutputDirectory="PreserveNewest"/>
+    <None Update="Assets\lhp_logo.png" CopyToOutputDirectory="PreserveNewest"/>
     <!--<None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.json')" />
     <None Update="appsettings.example.json" CopyToOutputDirectory="PreserveNewest" />-->
   </ItemGroup>
