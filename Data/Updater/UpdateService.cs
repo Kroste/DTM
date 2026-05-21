@@ -44,11 +44,14 @@ public static class UpdateService
             int pid = Environment.ProcessId;
             string scriptPath = Path.Combine(Path.GetTempPath(), "dtm_update.ps1");
 
+            // $dtmPid statt $pid: $PID ist in PowerShell eine automatische Variable
+            // (PID des laufenden powershell.exe). Überschreiben ist zwar möglich,
+            // aber fehleranfällig — eigener Name vermeidet jede Kollision.
             SystemFile.WriteAllText(scriptPath,
-                $"$pid={pid}\n" +
+                $"$dtmPid={pid}\n" +
                 $"$src='{tempDir.Replace("'", "''")}'\n" +
                 $"$dst='{exeDir.Replace("'", "''")}'\n" +
-                "while (Get-Process -Id $pid -ErrorAction SilentlyContinue) { Start-Sleep 1 }\n" +
+                "while (Get-Process -Id $dtmPid -ErrorAction SilentlyContinue) { Start-Sleep 1 }\n" +
                 "Copy-Item \"$src\\*\" $dst -Recurse -Force\n" +
                 "Start-Process \"$dst\\DTM.exe\"\n");
 
@@ -59,8 +62,13 @@ public static class UpdateService
                 UseShellExecute = true
             });
 
+            // Environment.Exit(0) würde die Finalizer des eingebetteten PS-SDK-Runspace
+            // aufrufen und damit unbegrenzt blockieren.
+            // Process.Kill() schickt direkt TerminateProcess/SIGKILL — kein Finalizer, kein Hang.
             _logger.Info("Update-Skript gestartet, Anwendung wird beendet.");
-            Environment.Exit(0);
+            LogManager.Flush();
+            LogManager.Shutdown();
+            Process.GetCurrentProcess().Kill();
         }
         catch (Exception ex)
         {
