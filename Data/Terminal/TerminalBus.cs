@@ -1,3 +1,5 @@
+using NLog;
+
 namespace DTM.Data.Terminal;
 
 /// <summary>
@@ -10,6 +12,7 @@ namespace DTM.Data.Terminal;
 /// </summary>
 public static class TerminalBus
 {
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private static readonly object _lock = new();
     private static ITerminalSession? _powerShellSession;
 
@@ -21,6 +24,7 @@ public static class TerminalBus
     public static void RegisterPowerShellSession(ITerminalSession session)
     {
         lock (_lock) _powerShellSession = session;
+        _logger.Debug("TerminalBus: PowerShell-Session registriert.");
     }
 
     /// <summary>Hebt die Registrierung auf (wenn das Control disposed wird).</summary>
@@ -31,6 +35,7 @@ public static class TerminalBus
             if (ReferenceEquals(_powerShellSession, session))
                 _powerShellSession = null;
         }
+        _logger.Debug("TerminalBus: PowerShell-Session deregistriert.");
     }
 
     /// <summary>Ob aktuell eine pwsh-Session zum Routen verfügbar ist.</summary>
@@ -59,9 +64,12 @@ public static class TerminalBus
 
         if (sess is null || !sess.IsRunning)
         {
+            _logger.Warn("TerminalBus: keine aktive pwsh-Session für {0}", functionName);
             onUnavailable?.Invoke();
             return;
         }
+
+        _logger.Info("TerminalBus: {0} für '{1}'", functionName, database);
 
         if (sess is ITerminalBusInjector injector)
         {
@@ -93,9 +101,12 @@ public static class TerminalBus
 
         if (sess is null || !sess.IsRunning)
         {
+            _logger.Warn("TerminalBus: keine aktive pwsh-Session für {0}", functionName);
             onUnavailable?.Invoke();
             return;
         }
+
+        _logger.Info("TerminalBus: {0} für '{1}'", functionName, database);
 
         if (sess is ITerminalBusInjector injector)
         {
@@ -121,6 +132,7 @@ public static class TerminalBus
         ITerminalSession? sess;
         lock (_lock) sess = _powerShellSession;
         if (sess is null || !sess.IsRunning) return;
+        _logger.Debug("TerminalBus: Skript gesendet.");
         _ = sess.SendCommandAsync(script);
     }
 }

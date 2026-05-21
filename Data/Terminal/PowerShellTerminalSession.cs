@@ -1,6 +1,7 @@
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Text;
+using NLog;
 
 namespace DTM.Data.Terminal;
 
@@ -15,6 +16,8 @@ namespace DTM.Data.Terminal;
 /// </summary>
 public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusInjector
 {
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
     /// <summary>Optionales Setup-Skript, das einmal beim Start läuft.</summary>
     public string? InitialScript { get; }
 
@@ -65,17 +68,20 @@ public sealed class PowerShellTerminalSession : ITerminalSession, ITerminalBusIn
             var host = new DtmPSHost(_hostUi);
             _runspace = RunspaceFactory.CreateRunspace(host);
             _runspace.Open();
+            _logger.Info("PowerShell-Runspace geöffnet.");
             Notice?.Invoke(this, "[PowerShell-Runspace geöffnet]");
 
             if (!string.IsNullOrWhiteSpace(InitialScript))
             {
                 Notice?.Invoke(this, "[Initial-Setup wird ausgeführt …]");
                 await ExecuteRawAsync(InitialScript!, cancellationToken).ConfigureAwait(false);
+                _logger.Info("Initial-Script ausgeführt.");
                 Notice?.Invoke(this, "[Initial-Setup abgeschlossen]");
             }
         }
         catch (Exception ex)
         {
+            _logger.Error(ex, "PowerShell-Start fehlgeschlagen.");
             ErrorReceived?.Invoke(this, $"[PowerShell-Start fehlgeschlagen: {ex.Message}]");
             SessionEnded?.Invoke(this, EventArgs.Empty);
         }
@@ -126,12 +132,14 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
     {
         if (_runspace is null || _runspace.RunspaceStateInfo.State != RunspaceState.Opened)
         {
+            _logger.Warn("ExecuteRawAsync: Runspace nicht offen.");
             ErrorReceived?.Invoke(this, "[PowerShell-Runspace nicht offen]");
             return;
         }
 
         await _executionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         _commandRunning = true;
+        _logger.Debug("PowerShell-Ausführung startet.");
         try
         {
             using var ps = PowerShell.Create();
@@ -190,6 +198,7 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
         }
         catch (Exception ex)
         {
+            _logger.Error(ex, "PowerShell-Ausführung fehlgeschlagen.");
             ErrorReceived?.Invoke(this, $"[PowerShell-Fehler: {ex.Message}]");
         }
         finally
@@ -216,6 +225,7 @@ Remove-Variable __cmd, __sb -ErrorAction SilentlyContinue
         finally
         {
             _runspace = null;
+            _logger.Info("PowerShell-Runspace gestoppt.");
             SessionEnded?.Invoke(this, EventArgs.Empty);
         }
         return Task.CompletedTask;

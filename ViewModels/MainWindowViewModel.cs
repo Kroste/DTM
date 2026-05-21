@@ -265,6 +265,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         DbName = "—"; DbHost = "—"; DbStatus = "—"; DbVersion = "—";
         DbSize = "—"; RecoveryOrArchiveMode = "—"; ActiveSessionsCount = "0";
         StatusBar = "Verbindungen aktualisiert.";
+        _logger.Debug("Verbindungen neu geladen: {0} Server.", newServers.Count);
     }
 
     [RelayCommand]
@@ -297,7 +298,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             if (newVersion is not null)
                 await ShowUpdateDialogAsync(newVersion, src);
         }
-        catch { /* Netzwerkfehler ignorieren */ }
+        catch (Exception ex) { _logger.Warn(ex, "Update-Prüfung fehlgeschlagen."); }
     }
 
     private async Task ShowUpdateDialogAsync(Version newVersion, string updateSource)
@@ -313,13 +314,18 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         switch (dlg.Result)
         {
             case UpdateDialogResult.ApplyNow:
+                _logger.Info("Update wird jetzt angewendet: {0}", newVersion);
                 DTM.Updater.UpdateService.ApplyUpdate(updateSource);
                 break;
             case UpdateDialogResult.Later:
+                _logger.Info("Update auf {0} auf später verschoben (30 min).", newVersion);
                 _ = Task.Delay(TimeSpan.FromMinutes(30))
                         .ContinueWith(_ =>
                             Dispatcher.UIThread.InvokeAsync(() =>
                                 ShowUpdateDialogAsync(newVersion, updateSource)));
+                break;
+            case UpdateDialogResult.Skip:
+                _logger.Info("Update auf {0} für diese Sitzung übersprungen.", newVersion);
                 break;
         }
     }

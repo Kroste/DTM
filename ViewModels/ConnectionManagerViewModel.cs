@@ -2,11 +2,14 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DTM.Config;
 using DTM.Data.Terminal;
+using NLog;
 
 namespace DTM.ViewModels;
 
 public sealed partial class ConnectionManagerViewModel : ViewModelBase
 {
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
     public ObservableCollection<ConnectionEntry> Connections { get; } = [];
 
     [ObservableProperty] private ConnectionEntry? _selectedConnection;
@@ -24,6 +27,8 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
         _sambaSource = foc.SambaSource;
         _modulePath = foc.ModulePath;
         _updateSource = foc.UpdateSource;
+
+        _logger.Debug("ConnectionManager: {0} Verbindungen geladen.", Connections.Count);
     }
 
     public void SaveFocSql()
@@ -32,6 +37,7 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
         AppSettingsStore.SaveFocSql(config);
         FocSqlRuntime.Current = config;
         TerminalBus.SendScript(FocSqlRuntime.BuildImportSnippet());
+        _logger.Info("FOC-SQL: SambaSource={0}, ModulePath={1}", SambaSource, ModulePath);
     }
 
     public void AddEntry(ConnectionEntry entry)
@@ -39,6 +45,7 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
         Connections.Add(entry);
         SelectedConnection = entry;
         Save();
+        _logger.Debug("Verbindung hinzugefügt: {0}", entry.Key);
     }
 
     public void UpdateEntry(ConnectionEntry updated)
@@ -47,11 +54,13 @@ public sealed partial class ConnectionManagerViewModel : ViewModelBase
         if (idx >= 0) Connections[idx] = updated;
         SelectedConnection = updated;
         Save();
+        _logger.Debug("Verbindung aktualisiert: {0}", updated.Key);
     }
 
     public void DeleteSelected()
     {
         if (SelectedConnection is null) return;
+        _logger.Debug("Verbindung gelöscht: {0}", SelectedConnection.Key);
         Connections.Remove(SelectedConnection);
         SelectedConnection = null;
         Save();

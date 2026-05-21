@@ -41,6 +41,7 @@ namespace DTM.MSSQL
                     try
                     {
                         Connection.Open();
+                        _logger.Info("MSSQL verbunden: {0}", LogMask.MaskConnectionString(con));
                         return true;
                     }
                     catch (Exception ex)
@@ -78,6 +79,7 @@ namespace DTM.MSSQL
                     }
                 }
 
+                _logger.Debug("get_Rows: {0} Zeilen zurückgegeben.", dt.Rows.Count);
                 return dt;
 
             }

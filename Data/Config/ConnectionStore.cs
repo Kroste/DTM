@@ -1,12 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using NLog;
 using SystemFile = System.IO.File;
 
 namespace DTM.Config;
 
 public static class ConnectionStore
 {
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
     internal static string _path = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "DTM", "connections.json");
@@ -17,16 +20,31 @@ public static class ConnectionStore
         try
         {
             string json = SystemFile.ReadAllText(_path);
-            return JsonSerializer.Deserialize<List<ConnectionEntry>>(json) ?? [];
+            var result = JsonSerializer.Deserialize<List<ConnectionEntry>>(json) ?? [];
+            _logger.Info("Verbindungen geladen: {0} Einträge aus {1}", result.Count, _path);
+            return result;
         }
-        catch { return []; }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Fehler beim Laden der Verbindungen aus {0}", _path);
+            return [];
+        }
     }
 
     public static void Save(List<ConnectionEntry> entries)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         string json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
-        SystemFile.WriteAllText(_path, json);
+        try
+        {
+            SystemFile.WriteAllText(_path, json);
+            _logger.Info("Verbindungen gespeichert: {0} Einträge nach {1}", entries.Count, _path);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Fehler beim Speichern der Verbindungen nach {0}", _path);
+            throw;
+        }
     }
 
     public static string Protect(string plainText)

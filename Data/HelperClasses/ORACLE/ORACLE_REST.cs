@@ -2,10 +2,14 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Serialization;
+using NLog;
+
 namespace DTM.ORACLE
 {
     public class REST : IDisposable
     {
+        private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
         private readonly HttpClient _http;
         private readonly bool _ownsHandler;
         private readonly SocketsHttpHandler? _handler;
@@ -21,6 +25,7 @@ namespace DTM.ORACLE
                 // ACHTUNG: deaktiviert MITM-Schutz. Siehe Hinweise unten zur Produktivvariante.
                 _handler.SslOptions.RemoteCertificateValidationCallback =
                     (_, _, _, _) => true;
+                _logger.Warn("Oracle REST: SSL-Zertifikatsprüfung deaktiviert für {0}", credential.Server);
             }
 
             _http = new HttpClient(_handler, disposeHandler: true)
@@ -43,6 +48,8 @@ namespace DTM.ORACLE
 
             // OLVM antwortet bei fehlendem User-Agent mit 403 in manchen Konfigs
             _http.DefaultRequestHeaders.UserAgent.ParseAdd("OlvmCsharpClient/1.0");
+
+            _logger.Info("Oracle REST-Client initialisiert: Server={0}, User={1}", credential.Server, credential.User);
         }
 
         public async Task<IReadOnlyList<VmInfo>> GetVmsAsync(string? search = null, CancellationToken ct = default)
@@ -53,8 +60,19 @@ namespace DTM.ORACLE
                 url += $"?search={Uri.EscapeDataString(search)}";
             }
 
-            VmListResponse? response = await _http.GetFromJsonAsync<VmListResponse>(url, ct);
-            return response?.Vms ?? [];
+            _logger.Debug("Oracle REST: Lade VMs (search={0})", search ?? "(alle)");
+            try
+            {
+                VmListResponse? response = await _http.GetFromJsonAsync<VmListResponse>(url, ct);
+                var result = response?.Vms ?? [];
+                _logger.Info("Oracle REST: {0} VMs geladen.", result.Count);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Oracle REST: GetVmsAsync fehlgeschlagen.");
+                throw;
+            }
         }
 
         /// <summary>Liefert (Name, FQDN, Status) je VM.</summary>
@@ -62,13 +80,23 @@ namespace DTM.ORACLE
         {
             // Mit "status=up" sparst du Bandbreite, wenn dich nur laufende VMs interessieren.
             string? search = onlyRunning ? "status=up" : null;
-            IReadOnlyList<VmInfo> vms = await GetVmsAsync(search, ct);
-
-            return vms
-                .Select(v => new VmFqdnEntry(v.Name, v.Fqdn, v.Status, v.Id))
-                .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            try
+            {
+                IReadOnlyList<VmInfo> vms = await GetVmsAsync(search, ct);
+                var result = vms
+                    .Select(v => new VmFqdnEntry(v.Name, v.Fqdn, v.Status, v.Id))
+                    .OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                _logger.Info("Oracle REST: {0} VM-FQDNs geladen.", result.Count);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Oracle REST: GetAllVmFqdnsAsync fehlgeschlagen.");
+                throw;
+            }
         }
+
         public void Dispose()
         {
             _http.Dispose();
