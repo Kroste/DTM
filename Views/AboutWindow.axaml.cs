@@ -61,8 +61,7 @@ public partial class AboutWindow : Window
             }
 
             // Update gefunden → UpdatePromptWindow öffnen
-            var current = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
-            var dlg = new UpdatePromptWindow(newVersion.ToString(), current.ToString(3));
+            var dlg = new UpdatePromptWindow(newVersion.ToString(), UpdateService.CurrentVersion().ToString(3));
             await dlg.ShowDialog(this);
 
             if (dlg.Result == UpdateDialogResult.ApplyNow)

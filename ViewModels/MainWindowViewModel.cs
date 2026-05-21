@@ -327,9 +327,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Window? owner = GetMainWindow();
         if (owner is null) return;
 
-        var current = System.Reflection.Assembly.GetExecutingAssembly()
-                            .GetName().Version ?? new Version(1, 0, 0);
-        var dlg = new UpdatePromptWindow(newVersion.ToString(), current.ToString(3));
+        var dlg = new UpdatePromptWindow(newVersion.ToString(),
+                                         DTM.Updater.UpdateService.CurrentVersion().ToString(3));
         await dlg.ShowDialog(owner);
 
         switch (dlg.Result)

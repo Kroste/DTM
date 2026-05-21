@@ -9,6 +9,19 @@ public static class UpdateService
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
+    /// <summary>
+    /// Liest die laufende Version aus AssemblyInformationalVersion (&lt;Version&gt; in der csproj),
+    /// damit das Format mit der version.txt übereinstimmt (z. B. "1.0.4").
+    /// AssemblyVersion hat ein anderes Schema (1.0.0.4) und darf hier NICHT verwendet werden.
+    /// </summary>
+    public static Version CurrentVersion()
+    {
+        var raw = Assembly.GetExecutingAssembly()
+                          .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                          ?.InformationalVersion ?? "1.0.0";
+        return Version.TryParse(raw.Split('+')[0], out var v) ? v : new Version(1, 0, 0);
+    }
+
     public static async Task<Version?> CheckForUpdateAsync(string updateSource)
     {
         if (string.IsNullOrWhiteSpace(updateSource)) return null;
@@ -21,7 +34,7 @@ public static class UpdateService
         }
         string text = await SystemFile.ReadAllTextAsync(versionFile);
         if (!Version.TryParse(text.Trim(), out var remote)) return null;
-        var current = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+        var current = CurrentVersion();
         if (remote > current)
         {
             _logger.Info("Update verfügbar: {0} → {1}", current, remote);
