@@ -32,6 +32,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _statusBar = "Bereit";
     [ObservableProperty] private string _backupButtonText = "Backup";
 
+    [ObservableProperty] private bool _archiveLogOnEnabled;
+    [ObservableProperty] private bool _archiveLogOffEnabled;
+
     private List<Session> _currentSessions = new();
 
     // Initial-Setup der pwsh-Session:
@@ -62,6 +65,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedNodeChanged(NodeViewModelBase? value)
     {
+        ArchiveLogOnEnabled = false;
+        ArchiveLogOffEnabled = false;
+
         switch (value)
         {
             case ServerNodeViewModel server:
@@ -103,6 +109,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         if (stats is Database_Stats_MSSQL m)
         {
+            ArchiveLogOnEnabled = false;
+            ArchiveLogOffEnabled = false;
             BackupButtonText = "Backup";
             DbName = m.Name ?? "—";
             DbHost = m.Server ?? "—";
@@ -114,6 +122,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
         else if (stats is Database_Stats_ORACLE o)
         {
+            bool archiveOn = string.Equals(o.ArchiveLogMode, "ARCHIVELOG", StringComparison.OrdinalIgnoreCase);
+            ArchiveLogOnEnabled  = !archiveOn;
+            ArchiveLogOffEnabled =  archiveOn;
             BackupButtonText = "Dump";
             DbName = o.InstanceName ?? "—";
             DbHost = o.Server ?? "—";
@@ -208,6 +219,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
         RunSimpleAction("Set-Archive-Log", db, "", "ArchiveLog An");
+        ArchiveLogOnEnabled = false;
+        ArchiveLogOffEnabled = false;
+        _ = Task.Delay(TimeSpan.FromSeconds(8))
+                .ContinueWith(_ => Dispatcher.UIThread.InvokeAsync(() => LoadStatsAsync(db)));
     }
 
     [RelayCommand]
@@ -215,6 +230,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
         RunSimpleAction("Set-Archive-Log", db, "-Off", "ArchiveLog Aus");
+        ArchiveLogOnEnabled = false;
+        ArchiveLogOffEnabled = false;
+        _ = Task.Delay(TimeSpan.FromSeconds(8))
+                .ContinueWith(_ => Dispatcher.UIThread.InvokeAsync(() => LoadStatsAsync(db)));
     }
 
     /// <summary>
@@ -264,6 +283,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         DbName = "—"; DbHost = "—"; DbStatus = "—"; DbVersion = "—";
         DbSize = "—"; RecoveryOrArchiveMode = "—"; ActiveSessionsCount = "0";
+        ArchiveLogOnEnabled = false;
+        ArchiveLogOffEnabled = false;
         StatusBar = "Verbindungen aktualisiert.";
         _logger.Debug("Verbindungen neu geladen: {0} Server.", newServers.Count);
     }

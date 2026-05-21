@@ -184,13 +184,15 @@
                         <StackPanel>
                             <TextBlock Classes="groupLabel" Text="ARCHIVE-LOG" />
                             <StackPanel Orientation="Horizontal">
-                                <Button Classes="action" Command="{Binding ArchiveLogOnCommand}">
+                                <Button Classes="action" Command="{Binding ArchiveLogOnCommand}"
+                                        IsEnabled="{Binding ArchiveLogOnEnabled}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Classes="glyph" Text="&#x25B6;" />
                                         <TextBlock Text="Log An" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
-                                <Button Classes="action" Command="{Binding ArchiveLogOffCommand}">
+                                <Button Classes="action" Command="{Binding ArchiveLogOffCommand}"
+                                        IsEnabled="{Binding ArchiveLogOffEnabled}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Classes="glyph" Text="&#x25A0;" />
                                         <TextBlock Text="Log Aus" VerticalAlignment="Center" />
