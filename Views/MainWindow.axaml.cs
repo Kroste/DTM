@@ -45,4 +45,7 @@ public partial class MainWindow : Window
             : WindowState.Maximized;
 
     private void OnClose(object? _, RoutedEventArgs e) => Close();
+
+    private async void OnAbout(object? _, RoutedEventArgs e) =>
+        await new AboutWindow().ShowDialog(this);
 }

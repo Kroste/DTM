@@ -31,6 +31,8 @@
                                Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Stretch">
+                    <Button Classes="titleBtn" Click="OnAbout"
+                            Content="&#x2139;" ToolTip.Tip="Über Datenbank-Manager" />
                     <Button Classes="titleBtn" Click="OnMinimize" Content="&#x2212;" />
                     <Button Classes="titleBtn" x:Name="MaximizeButton" Click="OnMaximize" Content="&#x2610;" />
                     <Button Classes="titleBtn close" Click="OnClose" Content="&#x2715;" />
