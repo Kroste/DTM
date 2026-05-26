@@ -38,6 +38,7 @@ jobs:
         with:
           name: DTM-windows
           path: ./publish
+          retention-days: 1
 
   build-linux:
     name: Build Linux (linux-x64)
@@ -56,6 +57,7 @@ jobs:
         with:
           name: DTM-linux
           path: ./publish
+          retention-days: 1
 
   release:
     name: GitHub Release erstellen
