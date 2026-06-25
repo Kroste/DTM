@@ -289,9 +289,12 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       bewusst weggelassen — IHost/IConfiguration/ILogger werden nicht gebraucht,
       NLog konfiguriert sich selbst, JSON-Stores haben ihr eigenes Schema. Lässt
       sich nachziehen, wenn Config/Logging via DI später nötig wird.)_
-- [ ] **0.4** `Directory.Build.props` (Inhalt wie Tech-Stack-Block oben) +
+- [x] **0.4** `Directory.Build.props` (Inhalt wie Tech-Stack-Block oben) +
       `.editorconfig` (file-scoped Namespaces, Accessibility-Modifier erzwingen) +
       `LICENSE`. — `S`
+      _(erledigt: `f9e1236` für `Directory.Build.props` + `.editorconfig` +
+      csproj-Aufräumung, MIT-LICENSE © 2025-2026 Lars Oste separat. Bestehender
+      Code ist mit den neuen Regeln konform — keine Quellcode-Anpassung nötig.)_
 
 #### Phase 1 — Quick Wins (keine Submodul-Änderung nötig)
 
