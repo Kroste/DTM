@@ -228,6 +228,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RunSimpleAction("Remove-Snapshot", db, "", "Remove Snapshot");
     }
 
+    // Set-Archive-Log dispatched im FOC-SQL-Modul nach DB-Typ:
+    //   MSSQL  -> Database-Set-Recovery-Mode -Recovery FULL/SIMPLE
+    //   Oracle -> /mnt/dbmgmt/scripts/archivelog-on.sh / -off.sh
+    // Die "Log An/Aus"-Labels sind dadurch Oracle-zentriert; fuer MSSQL ist
+    // es semantisch ein Recovery-Mode-Toggle. Akzeptierte Doppelnutzung
+    // (siehe CLAUDE.md / Roadmap 1.1); fuer MSSQL bringt 3.4 einen dedizierten
+    // Recovery-Mode-Dropdown als saubere Alternative.
     [RelayCommand]
     private void ArchiveLogOn()
     {

@@ -239,6 +239,12 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 - **Keine KI-Integration** – DTM ist Daten-Admin-Tool, nicht KI-Produkt
   (siehe Abschnitt „KI-Integration").
 
+- **„Log An/Aus"-Buttons mit semantischer Doppelnutzung** – die Buttons rufen
+  einheitlich `Set-Archive-Log` auf, das Modul dispatched MSSQL→Recovery-Mode-
+  Toggle (FULL/SIMPLE), Oracle→echter Archivelog-Toggle. Die Labels sind
+  Oracle-zentriert, funktional klappt es für beide. Eine sauberere MSSQL-
+  Alternative kommt mit Phase 3.4 (Recovery-Mode-Dropdown).
+
 ### Erledigte Migrationen
 
 1. **Avalonia 11.2.3 → 12.x (inkl. `ChromeWindow`-Basisklasse)** — erledigt
@@ -298,9 +304,15 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 #### Phase 1 — Quick Wins (keine Submodul-Änderung nötig)
 
-- [ ] **1.1** `Set-Archive-Log`-Inkonsistenz klären — heute UI-seitig Oracle-only
-      gefiltert, Modul kann aber MSSQL+Oracle. Entscheidung dokumentieren oder
-      MSSQL-Pfad freischalten. — `S`
+- [x] **1.1** `Set-Archive-Log`-Inkonsistenz geklärt — entschieden: Status quo.
+      Code-Realität (entgegen ursprünglicher Roadmap-Annahme): die „Log An/Aus"-
+      Buttons sind in `MainWindowViewModel.ApplyStats` für **beide** DB-Typen
+      aktiv. `Set-Archive-Log` dispatched im Modul nach DB-Typ: MSSQL togglet
+      `Recovery FULL/SIMPLE`, Oracle togglet echten `ARCHIVELOG ON/OFF`. Die
+      semantische Doppelnutzung der gleichen Buttons bleibt absichtlich — Phase
+      3.4 bringt für MSSQL einen dedizierten Recovery-Mode-Dropdown
+      (FULL/SIMPLE/BULK_LOGGED), der die Mehrdeutigkeit für den MSSQL-Pfad
+      auflöst. — `S` _(siehe „Akzeptierte Abweichungen" oben)_
 - [ ] **1.2** Snapshot-Buttons: Multi-PDB-Warnung für Oracle vor `Restore-Snapshot`
       (`⚠ CDB wird heruntergefahren, betrifft alle PDBs`). — `S` 🛡
 - [ ] **1.3** Cluster-Health-Indicator (`Get-ClusterHealthStatus`) in Info-Card oder
