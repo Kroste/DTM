@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # JS-Actions auf Node 24 zwingen (konsistent zur release.yml).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+# Bei neuen Pushes alte Runs auf demselben Ref abbrechen — spart Minuten.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      # external/FOC-SQL ist ein Dev-Submodul und wird zur Laufzeit/zum Build
+      # nicht referenziert -> kein submodules: true noetig.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Build DTM (Release)
+        run: dotnet build DTM.csproj -c Release
+
+      - name: Tests ausfuehren
+        run: dotnet test DTM.Tests/DTM.Tests.csproj --logger "console;verbosity=normal"
