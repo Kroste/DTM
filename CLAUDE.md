@@ -273,11 +273,14 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 #### Phase 0 — Fundament (Schutz vor späteren Regressionen)
 
-- [ ] **0.1** CI-Workflow `.github/workflows/ci.yml`: `dotnet build` + `dotnet test`
-      auf Push/PR. — `S`
-- [ ] **0.2** Globaler Exception-Handler in `Program.cs`
+- [x] **0.1** CI-Workflow `.github/workflows/ci.yml`: `dotnet build` + `dotnet test`
+      auf Push/PR. — `S` _(erledigt: `91991c7`, Actions nachgezogen auf
+      Node-24-native Major-Versionen mit `1c7acde`)_
+- [x] **0.2** Globaler Exception-Handler in `Program.cs`
       (`AppDomain.CurrentDomain.UnhandledException` +
       `TaskScheduler.UnobservedTaskException` → NLog Fatal + Dialog). — `S`
+      _(erledigt: `0d0b48a`; zusätzlich `Dispatcher.UIThread.UnhandledException`
+      für UI-Thread, `FatalErrorWindow` als ChromeWindow-Dialog)_
 - [ ] **0.3** `Microsoft.Extensions.DependencyInjection` + `Hosting` einziehen;
       manuelle Instanziierung in `App.axaml.cs` (`BuildDataLayer`) durch DI ersetzen
       — ViewModels/Services über Container. — `M`
