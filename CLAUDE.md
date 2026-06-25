@@ -317,8 +317,12 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       — übersprungen, wird durch 1.4 (Restore-Vorschau-Dialog mit Restore-Points-
       und PDB-Liste) abgedeckt. Eigener Stop-Gap-Quick-Fix wäre Wegwerfcode. — `S` 🛡
       _(skip, siehe 1.4)_
-- [ ] **1.3** Cluster-Health-Indicator (`Get-ClusterHealthStatus`) in Info-Card oder
+- [x] **1.3** Cluster-Health-Indicator (`Get-ClusterHealthStatus`) in Info-Card oder
       als Status-Punkt. MSSQL-only, read-only. — `S`
+      _(erledigt: `57040e5`; kleiner „Cluster-Health"-Pillenbutton im Info-Card-
+      Header neben dem Status-Badge, `ClusterHealthVisible`-Binding blendet ihn
+      bei Oracle aus. `TerminalBus.RunFocSqlServerAction` als neue Hilfsmethode
+      für FOC-SQL-Funktionen mit `-Server` statt `-Database`.)_
 - [ ] **1.4** Oracle-Restore-Vorschau (`Get-OracleRestoreInfo`) — neuer Dialog
       `OracleRestoreSelectWindow` mit Liste der Restore Points + PDBs vor
       `Restore-Snapshot`. Macht 1.2 obsolet, wenn richtig gebaut. — `M` 🛡
