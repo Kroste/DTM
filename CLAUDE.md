@@ -281,9 +281,14 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       `TaskScheduler.UnobservedTaskException` → NLog Fatal + Dialog). — `S`
       _(erledigt: `0d0b48a`; zusätzlich `Dispatcher.UIThread.UnhandledException`
       für UI-Thread, `FatalErrorWindow` als ChromeWindow-Dialog)_
-- [ ] **0.3** `Microsoft.Extensions.DependencyInjection` + `Hosting` einziehen;
-      manuelle Instanziierung in `App.axaml.cs` (`BuildDataLayer`) durch DI ersetzen
+- [x] **0.3** `Microsoft.Extensions.DependencyInjection` einziehen; manuelle
+      Instanziierung in `App.axaml.cs` (`BuildDataLayer`) durch DI ersetzen
       — ViewModels/Services über Container. — `M`
+      _(erledigt: `a9b98be`; `Composition/ServiceRegistrations.cs` als Composition-Root,
+      `App.Services` als statischer `IServiceProvider`. `Microsoft.Extensions.Hosting`
+      bewusst weggelassen — IHost/IConfiguration/ILogger werden nicht gebraucht,
+      NLog konfiguriert sich selbst, JSON-Stores haben ihr eigenes Schema. Lässt
+      sich nachziehen, wenn Config/Logging via DI später nötig wird.)_
 - [ ] **0.4** `Directory.Build.props` (Inhalt wie Tech-Stack-Block oben) +
       `.editorconfig` (file-scoped Namespaces, Accessibility-Modifier erzwingen) +
       `LICENSE`. — `S`
