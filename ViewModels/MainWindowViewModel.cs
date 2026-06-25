@@ -221,9 +221,29 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void RestoreSnapshot()
+    private async Task RestoreSnapshot()
     {
         if (SelectedNode is not DatabaseNodeViewModel db) return;
+
+        // Oracle: Vorab Restore-Vorschau-Dialog mit Restore-Points und
+        // PDB-Liste + Multi-PDB-Warnung. MSSQL ueberspringt das.
+        if (db.ServerTyp == DB_SERVER.ServerTyp.ORACLE)
+        {
+            Window? owner = GetMainWindow();
+            if (owner is null || _services is null) return;
+
+            OracleRestoreSelectViewModel vm =
+                _services.GetRequiredService<OracleRestoreSelectViewModel>();
+            OracleRestoreSelectWindow dlg = new() { DataContext = vm };
+
+            // LoadAsync nicht awaiten — der Dialog geht sofort auf mit
+            // Spinner, die Daten landen im UI sobald sie da sind.
+            _ = vm.LoadAsync(ModuleDatabaseId(db));
+
+            bool ok = await dlg.ShowDialog<bool>(owner);
+            if (!ok) return;
+        }
+
         RunSimpleAction("Restore-Snapshot", db, "", "Restore Snapshot");
     }
 

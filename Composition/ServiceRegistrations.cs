@@ -1,4 +1,5 @@
 using DTM.Config;
+using DTM.Data.Terminal;
 using DTM.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -41,6 +42,10 @@ internal static class ServiceRegistrations
                 sp.GetRequiredService<Dictionary<DB_SERVER.ServerTyp, DB_SERVER>>(),
                 sp.GetRequiredService<ODBC_Factory>()));
 
+        // Strukturierte FOC-SQL-Aufrufe ueber eigenen PS-Runspace (komplementaer
+        // zum TerminalBus, der Text in den pwsh-Tab schreibt).
+        services.AddSingleton<OracleRestoreService>();
+
         // --- ViewModels (Transient — neue Instanz pro Aufloesung) ---
         // MainWindowViewModel braucht den IServiceProvider, um untergeordnete
         // VMs (ConnectionManager, Sessions, TimePicker) zur Laufzeit aufzu-
@@ -53,6 +58,7 @@ internal static class ServiceRegistrations
         services.AddTransient<ConnectionManagerViewModel>();
         services.AddTransient<SessionsViewModel>();
         services.AddTransient<TimePickerViewModel>();
+        services.AddTransient<OracleRestoreSelectViewModel>();
 
         return services;
     }
