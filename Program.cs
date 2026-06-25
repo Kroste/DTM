@@ -1,4 +1,5 @@
 using Avalonia;
+using DTM.Diagnostics;
 using NLog;
 
 namespace DTM;
@@ -17,14 +18,16 @@ internal static class Program
         //   DOTNET_CLI_TELEMETRY_OPTOUT  - .NET CLI/Runtime-Telemetrie
         DisableThirdPartyTelemetry();
 
+        // Catch-All fuer Exceptions abseits des UI-Threads. Den UI-Handler
+        // registriert App.OnFrameworkInitializationCompleted, sobald der
+        // Dispatcher existiert.
+        FatalErrorHandler.Install();
+
         try
         {
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)
-
-
-        
         {
             _logger.Fatal(ex, "Unbehandelter Fehler beim App-Start.");
             throw;

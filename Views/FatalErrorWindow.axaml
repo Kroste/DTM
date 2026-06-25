@@ -1,0 +1,76 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DTM.Views.FatalErrorWindow"
+        Title="Unbehandelte Ausnahme"
+        Width="640" Height="480"
+        MinWidth="540" MinHeight="380"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBgBrush}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Titelleiste -->
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                PointerPressed="OnTitleBarPointerPressed">
+            <Grid ColumnDefinitions="*,Auto" Height="36">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                            VerticalAlignment="Center" Margin="14,0"
+                            IsHitTestVisible="False">
+                    <TextBlock Text="&#x26A0;" FontSize="13"
+                               Foreground="{DynamicResource DangerBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="Unbehandelte Ausnahme" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Grid.Column="1" Classes="titleBtn close"
+                        Click="OnTitleClose" Content="&#x2715;" />
+            </Grid>
+        </Border>
+
+        <!-- Inhalt -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*,Auto" Margin="20,16,20,16">
+
+            <!-- Kopfbereich: Quelle + Exception-Typ -->
+            <StackPanel Grid.Row="0" Spacing="6">
+                <TextBlock x:Name="SourceText" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource DangerBrush}" />
+                <TextBlock x:Name="ExceptionTypeText" FontSize="12"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           FontFamily="Cascadia Mono, Consolas, Menlo, Monospace" />
+            </StackPanel>
+
+            <!-- Trennlinie -->
+            <Border Grid.Row="1" Height="1"
+                    Background="{DynamicResource BorderBrush}" Margin="0,12" />
+
+            <!-- Message + Stacktrace -->
+            <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                    CornerRadius="8" Padding="12">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="12">
+                        <TextBlock x:Name="MessageText" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   FontSize="13" />
+                        <Border Height="1" Background="{DynamicResource BorderBrush}" />
+                        <TextBlock x:Name="StackTraceText" TextWrapping="NoWrap"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   FontSize="11"
+                                   FontFamily="Cascadia Mono, Consolas, Menlo, Monospace" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Footer-Buttons -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal"
+                        HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+                <Button Content="Log-Ordner &#xF6;ffnen" Click="OnOpenLogs"
+                        MinWidth="140" />
+                <Button Content="Schlie&#xDF;en" Click="OnClose"
+                        MinWidth="100" IsDefault="True" Classes="action primary" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+
+</Window>

@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using DTM.Config;
+using DTM.Diagnostics;
 using DTM.ViewModels;
 using DTM.Views;
 
@@ -16,6 +17,9 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Dispatcher existiert erst jetzt — daher hier und nicht in Program.Main.
+        FatalErrorHandler.InstallUiHandlers();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             (Dictionary<DB_SERVER.ServerTyp, DB_SERVER>? servers, IDTM_DATA? dtmData) = BuildDataLayer();
