@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using DTM.ViewModels.TreeNodes;
 using DTM.Config;
 using DTM.Views;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 
 namespace DTM.ViewModels;
@@ -15,6 +16,14 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private IDTM_DATA _data;
+
+    // Optional: wird von der App via DI gesetzt; in Tests bleibt es null und die
+    // Dialog-Aufrufe fallen auf direktes "new" zurueck (Tests stossen die UI-
+    // Befehle nicht an, daher reicht das).
+    private readonly IServiceProvider? _services;
+
+    private T ResolveOrNew<T>() where T : class, new() =>
+        _services?.GetService<T>() ?? new T();
 
     public ObservableCollection<NodeViewModelBase> RootNodes { get; } = new();
 
@@ -56,9 +65,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         DTM.Data.Terminal.FocSqlRuntime.BuildImportSnippet() + "; " +
         "Write-Host 'FOC-SQL Modul geladen. Bereit.'";
 
-    public MainWindowViewModel(IDTM_DATA data, Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers)
+    public MainWindowViewModel(
+        IDTM_DATA data,
+        Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers,
+        IServiceProvider? services = null)
     {
         _data = data;
+        _services = services;
         foreach (var typ in servers.Keys)
             RootNodes.Add(new ServerNodeViewModel(typ, data));
     }
@@ -261,7 +274,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         Window? owner = GetMainWindow();
         if (owner is null) return;
-        ConnectionManagerWindow dlg = new() { DataContext = new ConnectionManagerViewModel() };
+        ConnectionManagerWindow dlg = new() { DataContext = ResolveOrNew<ConnectionManagerViewModel>() };
         await dlg.ShowDialog(owner);
         ReloadFromStores();
     }
@@ -296,7 +309,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Window? owner = GetMainWindow();
         if (owner is null) return;
 
-        SessionsViewModel vm = new SessionsViewModel();
+        SessionsViewModel vm = ResolveOrNew<SessionsViewModel>();
         vm.SetSessions(_currentSessions);
         SessionsWindow dlg = new SessionsWindow { DataContext = vm };
         await dlg.ShowDialog(owner);
@@ -307,7 +320,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Window? owner = GetMainWindow();
         if (owner is null) return TimePickResult.Cancel();
 
-        TimePickerWindow dlg = new TimePickerWindow { DataContext = new TimePickerViewModel() };
+        TimePickerWindow dlg = new TimePickerWindow { DataContext = ResolveOrNew<TimePickerViewModel>() };
         return await dlg.ShowDialog<TimePickResult>(owner);
     }
 

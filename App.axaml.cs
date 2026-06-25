@@ -1,18 +1,35 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using DTM.Composition;
 using DTM.Config;
 using DTM.Diagnostics;
 using DTM.ViewModels;
 using DTM.Views;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DTM;
 
 public partial class App : Application
 {
+    /// <summary>
+    /// Composition-Root des laufenden Prozesses. Wird in <see cref="Initialize"/>
+    /// gebaut. Tests instanziieren ViewModels weiterhin direkt und beruehren
+    /// diesen Container nicht.
+    /// </summary>
+    public static IServiceProvider Services { get; private set; } = default!;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+
+        // FOC-SQL-Runtime hat ihren eigenen static-Singleton (FocSqlRuntime.Current);
+        // bleibt aus dem DI-Container raus, damit der Lifecycle nicht zerfaellt.
+        DTM.Data.Terminal.FocSqlRuntime.Current = AppSettingsStore.LoadFocSql();
+
+        Services = new ServiceCollection()
+            .AddDtmServices()
+            .BuildServiceProvider();
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -22,27 +39,12 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            (Dictionary<DB_SERVER.ServerTyp, DB_SERVER>? servers, IDTM_DATA? dtmData) = BuildDataLayer();
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(dtmData, servers)
+                DataContext = Services.GetRequiredService<MainWindowViewModel>()
             };
         }
 
         base.OnFrameworkInitializationCompleted();
-    }
-
-    private static (Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers, IDTM_DATA data) BuildDataLayer()
-    {
-        DTM.Data.Terminal.FocSqlRuntime.Current = AppSettingsStore.LoadFocSql();
-
-        Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers = new();
-        foreach (ConnectionEntry entry in ConnectionStore.Load())
-        {
-            if (System.Enum.TryParse<DB_SERVER.ServerTyp>(entry.Key, ignoreCase: true, out var typ))
-                servers[typ] = new DB_SERVER(entry.ToCredential());
-        }
-
-        return (servers, new DTM_DATA(servers, new ODBC_Factory()));
     }
 }
