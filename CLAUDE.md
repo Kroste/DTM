@@ -263,34 +263,88 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
    - Build + 269 Tests grün auf Linux. **Smoke-Test der UI auf Windows + Linux
      steht noch aus** (Drag/Resize/Min/Max in jedem Fenster prüfen).
 
-### Offene Migrationen (TODO, in dieser Reihenfolge)
+### Offene Roadmap (Phasen, in dieser Reihenfolge)
 
-1. **Repo-Baseline**
-   - `Directory.Build.props` im Root anlegen (Inhalt wie Tech-Stack-Block oben).
-   - `.editorconfig` anlegen (file-scoped Namespaces, Accessibility-Modifier erzwingen).
-   - `LICENSE` anlegen.
-   - **MinVer** einbinden; manuelle `<Version>` / `<AssemblyVersion>` aus `DTM.csproj`
-     entfernen. Tag-Schema `vX.Y.Z` ist schon vorhanden.
-   - `README.md` um Screenshot ergänzen.
+> **Legende:** `S` = klein (1–3 h, 1 Commit) · `M` = mittel (halber Tag, 2–4 Commits) ·
+> `L` = groß (mehrere Tage). 📦 = FOC-SQL-Submodul muss erweitert werden
+> (eigener PR in `Kroste/FOC-SQL` + manueller Samba-Rollout durch Lars,
+> danach DTM ankoppeln). 🛡 = destruktive Aktion, braucht Bestätigungs-Dialog
+> + Test-DB. 🔁 = setzt vorheriges Item voraus.
 
-2. **CI/CD**
-   - `.github/workflows/ci.yml` für `dotnet build` + `dotnet test` bei jedem Push/PR.
-   - `.github/workflows/release.yml` um AppImage-Job erweitern; Node-Version auf 24.
+#### Phase 0 — Fundament (Schutz vor späteren Regressionen)
 
-3. **Komposition & Robustheit**
-   - `Microsoft.Extensions.DependencyInjection` + `Microsoft.Extensions.Hosting`
-     einziehen; manuelle Instanziierung in `App.axaml.cs` (`BuildDataLayer`) durch
-     DI ersetzen — ViewModels und Services über Container.
-   - Globaler Exception-Handler in `Program.cs`
-     (`AppDomain.CurrentDomain.UnhandledException` +
-     `TaskScheduler.UnobservedTaskException`) → NLog Fatal + freundlicher Dialog.
+- [ ] **0.1** CI-Workflow `.github/workflows/ci.yml`: `dotnet build` + `dotnet test`
+      auf Push/PR. — `S`
+- [ ] **0.2** Globaler Exception-Handler in `Program.cs`
+      (`AppDomain.CurrentDomain.UnhandledException` +
+      `TaskScheduler.UnobservedTaskException` → NLog Fatal + Dialog). — `S`
+- [ ] **0.3** `Microsoft.Extensions.DependencyInjection` + `Hosting` einziehen;
+      manuelle Instanziierung in `App.axaml.cs` (`BuildDataLayer`) durch DI ersetzen
+      — ViewModels/Services über Container. — `M`
+- [ ] **0.4** `Directory.Build.props` (Inhalt wie Tech-Stack-Block oben) +
+      `.editorconfig` (file-scoped Namespaces, Accessibility-Modifier erzwingen) +
+      `LICENSE`. — `S`
 
-4. **UI-Feinheiten**
-   - `AboutWindow` ergänzen: GitHub-Link auf `https://github.com/Kroste/DTM`
-     und „Buy me a coffee"-Button (`buymeacoffee.com`).
-   - `.vscode/tasks.json` ergänzen: Hard-Clean-Task (rekursives Löschen von
-     `bin/` und `obj/`) sowie Task „Aktuelles Logfile öffnen"
-     (`logs/info.log` bzw. `logs/error.log`).
+#### Phase 1 — Quick Wins (keine Submodul-Änderung nötig)
+
+- [ ] **1.1** `Set-Archive-Log`-Inkonsistenz klären — heute UI-seitig Oracle-only
+      gefiltert, Modul kann aber MSSQL+Oracle. Entscheidung dokumentieren oder
+      MSSQL-Pfad freischalten. — `S`
+- [ ] **1.2** Snapshot-Buttons: Multi-PDB-Warnung für Oracle vor `Restore-Snapshot`
+      (`⚠ CDB wird heruntergefahren, betrifft alle PDBs`). — `S` 🛡
+- [ ] **1.3** Cluster-Health-Indicator (`Get-ClusterHealthStatus`) in Info-Card oder
+      als Status-Punkt. MSSQL-only, read-only. — `S`
+- [ ] **1.4** Oracle-Restore-Vorschau (`Get-OracleRestoreInfo`) — neuer Dialog
+      `OracleRestoreSelectWindow` mit Liste der Restore Points + PDBs vor
+      `Restore-Snapshot`. Macht 1.2 obsolet, wenn richtig gebaut. — `M` 🛡
+
+#### Phase 2 — Sessions & Backup-Workflow
+
+- [ ] **2.1** 📦 FOC-SQL erweitern: `Close-DbSessions` als Wrapper
+      (MSSQL: `Database-Close-Connections`; Oracle: `ALTER SYSTEM KILL SESSION`
+      per SSH). — `M`
+- [ ] **2.2** 🔁 Kill-Session-Button im `SessionsWindow` (per Row + „Alle beenden"),
+      mit Bestätigung. Nutzt `Close-DbSessions`. — `M` 🛡
+- [ ] **2.3** 📦 FOC-SQL erweitern: `Get-DbBackups` + `Invoke-DbRestore`
+      (MSSQL: `Get-All-Backups`/`Database-Backup-Restore`; Oracle: passendes
+      RMAN-Listing — optional, in v1 evtl. nur MSSQL). — `L`
+- [ ] **2.4** 🔁 Backup-Browser in DTM — neuer Tab oder Dialog mit DataGrid
+      (Datei, Datum, Größe) + Restore-Knopf. Pre-Check Sessions schließen via 2.1. — `L` 🛡
+
+#### Phase 3 — Wartungs-Tooling
+
+- [ ] **3.1** 📦 FOC-SQL erweitern: `Invoke-DbMaintenance` mit Switches
+      (`-CheckDb`, `-IndexRebuild`, `-ShrinkLog`) — Wrapper um die drei
+      MSSQL-Funktionen, Oracle vorerst Pass-Through. — `M`
+- [ ] **3.2** 🔁 Neue Action-Gruppe „WARTUNG" im MainWindow (drei Buttons im
+      Stil der bestehenden Gruppen, MSSQL-only-Filter). — `S`
+- [ ] **3.3** 📦 FOC-SQL erweitern: `Set-DbRecoveryMode` (Wrapper um
+      `Database-Set-Recovery-Mode`). — `S`
+- [ ] **3.4** 🔁 Recovery-Mode-Dropdown im Info-Card (FULL/SIMPLE/BULK_LOGGED)
+      für MSSQL, mit Bestätigung — Wechsel zu SIMPLE bricht Log-Chain. — `S`
+
+#### Phase 4 — Polish & Komfort
+
+- [ ] **4.1** Snapshot-Cleanup mit Altersfilter (`Database-Snapshot-Delete -Day n`)
+      als Option im Remove-Snapshot-Dialog. — `S` 📦 (optional)
+- [ ] **4.2** `AboutWindow` ergänzen: GitHub-Link auf `https://github.com/Kroste/DTM`
+      + „Buy me a coffee"-Button (`buymeacoffee.com`). — `S`
+- [ ] **4.3** `.vscode/tasks.json` ergänzen: Hard-Clean-Task (rekursives Löschen
+      `bin/`/`obj/`) + Task „Aktuelles Logfile öffnen" (`logs/info.log`/`error.log`). — `S`
+- [ ] **4.4** **MinVer** einbinden; manuelle `<Version>`/`<AssemblyVersion>` aus
+      `DTM.csproj` entfernen. Tag-Schema `vX.Y.Z` ist schon vorhanden. — `S`
+- [ ] **4.5** `.github/workflows/release.yml` um AppImage-Job erweitern
+      (Node 24 ist bereits gesetzt). — `M`
+- [ ] **4.6** `README.md` um Screenshot ergänzen. — `S`
+
+#### Phase 5 — Optional / Niedrige Priorität
+
+- [ ] **5.1** Query-Store-Toggle (MSSQL). — `S` 📦
+- [ ] **5.2** SQL-Script-Runner-Dialog (`Database-Execute-SQL`/`-GetSQL-File`). — `M` 📦
+- [ ] **5.3** `Database-Set-Page-Verify` / `Database-Set-Compatibility`. — `S` 📦
+- [ ] **5.4** Stats-Konsolidierung: ODBC-Stats durch `Get-DatabaseStats`
+      ablösen (Architektur-Refactor, beseitigt MSSQL-/Oracle-Logik-Duplikat
+      zwischen `Data/MSSQL_ODBC.cs`/`ORACLE_ODBC.cs` und dem PS-Modul). — `L`
 
 ---
 
