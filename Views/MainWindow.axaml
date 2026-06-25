@@ -95,6 +95,28 @@
                                     <TextBlock Text="{Binding DbStatus}" FontSize="11" FontWeight="SemiBold"
                                                Foreground="{DynamicResource AccentBrush}" />
                                 </Border>
+                                <!-- Cluster-Health: MSSQL-only, read-only.
+                                     Ruft Get-ClusterHealthStatus im pwsh-Tab auf
+                                     (Always-On / Failover-Cluster-Status). -->
+                                <Button VerticalAlignment="Center"
+                                        Command="{Binding CheckClusterHealthCommand}"
+                                        IsVisible="{Binding ClusterHealthVisible}"
+                                        ToolTip.Tip="Cluster-Health prüfen (Get-ClusterHealthStatus)"
+                                        Padding="10,4" Height="26" MinWidth="0"
+                                        Background="{DynamicResource SurfaceRaisedBrush}"
+                                        Foreground="{DynamicResource TextMutedBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="&#x29C8;" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource AccentBrush}" />
+                                        <TextBlock Text="Cluster-Health" FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
 
                             <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">

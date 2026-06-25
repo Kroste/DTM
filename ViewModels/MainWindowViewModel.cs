@@ -44,6 +44,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _archiveLogOnEnabled;
     [ObservableProperty] private bool _archiveLogOffEnabled;
 
+    // Get-ClusterHealthStatus ist MSSQL-only (Always-On/Failover-Cluster).
+    // Bei Oracle-Selection blenden wir den Button ganz aus.
+    [ObservableProperty] private bool _clusterHealthVisible;
+
     private List<Session> _currentSessions = new();
 
     // Initial-Setup der pwsh-Session:
@@ -80,6 +84,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         ArchiveLogOnEnabled = false;
         ArchiveLogOffEnabled = false;
+        ClusterHealthVisible = false;
 
         switch (value)
         {
@@ -125,6 +130,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             bool recoveryOn = string.Equals(m.RecorveryModel, "FULL", StringComparison.OrdinalIgnoreCase);
             ArchiveLogOnEnabled  = !recoveryOn;
             ArchiveLogOffEnabled =  recoveryOn;
+            ClusterHealthVisible = true;
             BackupButtonText = "Backup";
             DbName = m.Name ?? "—";
             DbHost = m.Server ?? "—";
@@ -306,8 +312,19 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         DbSize = "—"; RecoveryOrArchiveMode = "—"; ActiveSessionsCount = "0";
         ArchiveLogOnEnabled = false;
         ArchiveLogOffEnabled = false;
+        ClusterHealthVisible = false;
         StatusBar = "Verbindungen aktualisiert.";
         _logger.Debug("Verbindungen neu geladen: {0} Server.", newServers.Count);
+    }
+
+    // Get-ClusterHealthStatus -Server <host> — Always-On/Failover-Cluster-Status.
+    // Read-only, MSSQL-only; Output erscheint im pwsh-Tab.
+    [RelayCommand]
+    private void CheckClusterHealth()
+    {
+        if (string.IsNullOrWhiteSpace(DbHost) || DbHost == "—") return;
+        DTM.Data.Terminal.TerminalBus.RunFocSqlServerAction(
+            "Get-ClusterHealthStatus", DbHost, "Cluster-Health");
     }
 
     [RelayCommand]

@@ -124,6 +124,34 @@ public static class TerminalBus
     }
 
     /// <summary>
+    /// Ruft eine FOC-SQL-Funktion auf, die <c>-Server</c> statt <c>-Database</c>
+    /// nimmt (aktuell nur <c>Get-ClusterHealthStatus</c>). Sonst analog zu
+    /// <see cref="RunFocSqlSimple"/>.
+    /// </summary>
+    public static void RunFocSqlServerAction(
+        string functionName, string server, string title, Action? onUnavailable = null)
+    {
+        ITerminalSession? sess;
+        lock (_lock) sess = _powerShellSession;
+
+        if (sess is null || !sess.IsRunning)
+        {
+            _logger.Warn("TerminalBus: keine aktive pwsh-Session fuer {0}", functionName);
+            onUnavailable?.Invoke();
+            return;
+        }
+
+        _logger.Info("TerminalBus: {0} fuer Server '{1}'", functionName, server);
+
+        if (sess is ITerminalBusInjector injector)
+            injector.InjectNotice($"[Aktion: {title}]");
+
+        string serverEsc = server.Replace("'", "''");
+        string call = $"{functionName} -Server '{serverEsc}'";
+        _ = sess.SendCommandAsync(call);
+    }
+
+    /// <summary>
     /// Sendet ein beliebiges PowerShell-Skript an die laufende Session.
     /// Fire-and-forget — kein Fehler wenn kein Tab aktiv ist.
     /// </summary>
