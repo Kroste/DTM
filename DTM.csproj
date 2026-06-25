@@ -4,8 +4,8 @@
     <!-- TargetFramework, Nullable, ImplicitUsings, LangVersion, Authors,
          RepositoryUrl, TreatWarningsAsErrors kommen aus Directory.Build.props. -->
     <OutputType>Exe</OutputType>
-    <Version>1.0.7</Version>
-    <AssemblyVersion>1.0.0.7</AssemblyVersion>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <DefaultItemExcludes>$(DefaultItemExcludes);DTM.Tests\**</DefaultItemExcludes>

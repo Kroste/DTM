@@ -323,9 +323,16 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       Header neben dem Status-Badge, `ClusterHealthVisible`-Binding blendet ihn
       bei Oracle aus. `TerminalBus.RunFocSqlServerAction` als neue Hilfsmethode
       für FOC-SQL-Funktionen mit `-Server` statt `-Database`.)_
-- [ ] **1.4** Oracle-Restore-Vorschau (`Get-OracleRestoreInfo`) — neuer Dialog
+- [x] **1.4** Oracle-Restore-Vorschau (`Get-OracleRestoreInfo`) — neuer Dialog
       `OracleRestoreSelectWindow` mit Liste der Restore Points + PDBs vor
       `Restore-Snapshot`. Macht 1.2 obsolet, wenn richtig gebaut. — `M` 🛡
+      _(erledigt: `7e1c7d5`; Variante B = eigener In-Process-PowerShell-Runspace via
+      `OracleRestoreService` + `FocSqlRuntime.BuildImportSnippet`. POCOs in
+      `Data/Terminal/OracleRestoreInfo.cs`, ViewModel mit Loading/Error-State,
+      Dialog mit prominenter Multi-PDB-Warnung. Integration in
+      `MainWindowViewModel.RestoreSnapshot` macht den Weg fuer MSSQL unveraendert,
+      fuer Oracle wird vorab der Dialog gezeigt — kein Aufruf ohne explizite
+      Bestaetigung.)_
 
 #### Phase 2 — Sessions & Backup-Workflow
 
