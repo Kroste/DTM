@@ -220,6 +220,16 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
   `SqlConnectionStringBuilder` `Password`/`PWD` leeren – nie als Rohstring loggen.
   Logische Spezialisierung der allgemeinen Secrets-Regel.
 
+- **FOC-SQL als Dev-Submodul:** Das PowerShell-Modul `FOC-SQL.psm1` ist unter
+  `external/FOC-SQL/` als Git-Submodul (`https://github.com/Kroste/FOC-SQL.git`)
+  eingebunden — **ausschließlich als Code-Referenz für die Entwicklung** (Aufrufe
+  und Verhalten der Modulfunktionen wie `Backup-Database`, `Set-Snapshot`,
+  `Restore-Snapshot` im Original nachschlagen). Die DTM-Runtime lädt das Modul
+  **nicht** aus diesem Pfad — die produktive Auflösung läuft weiterhin über
+  `SambaSource`/`ModulePath` (siehe `Data/Terminal/FocSqlRuntime` und die
+  Einstellungen in `ConnectionManagerWindow`). Submodul-Inhalt aktualisieren bei
+  Bedarf: `git submodule update --remote external/FOC-SQL`.
+
 ---
 
 ## Projektspezifische Realität & offene Migrationen

@@ -25,13 +25,24 @@ Entwickelt von **Lars Oste** · Landeshauptstadt Potsdam · Fachbereich 54.2
 
 ## Einrichtung
 
-1. Bauen und starten:
+1. Repo klonen — bei Bedarf inklusive Dev-Submodul (`external/FOC-SQL/`,
+   reine Code-Referenz, nicht zur Laufzeit nötig):
+   ```
+   git clone --recurse-submodules https://github.com/Kroste/DTM.git
+   # oder, falls schon geklont:
+   git submodule update --init external/FOC-SQL
+   ```
+   Das Submodul unter `external/FOC-SQL/` ist eine reine Entwicklungs-Referenz
+   auf den FOC-SQL-Quellcode. Die App lädt FOC-SQL zur Laufzeit weiterhin über
+   die in den Einstellungen konfigurierte Samba-Quelle bzw. den Modulpfad-Override.
+
+2. Bauen und starten:
    ```
    dotnet build DTM.csproj -c Release
    dotnet run --project DTM.csproj -c Release
    ```
-2. Verbindungen über das ⚙-Symbol neben „Datenbanken" einrichten.
-3. Im selben Dialog Samba-Quelle, optionalen Modul-Pfad und Update-Quelle
+3. Verbindungen über das ⚙-Symbol neben „Datenbanken" einrichten.
+4. Im selben Dialog Samba-Quelle, optionalen Modul-Pfad und Update-Quelle
    eintragen und **Speichern** klicken.
 
 ---
