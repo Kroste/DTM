@@ -5,17 +5,14 @@ on:
     tags:
       - 'v[0-9]*'
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-
 jobs:
 
   test:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
       - name: Tests ausführen
@@ -26,8 +23,8 @@ jobs:
     needs: test
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
       - name: Publish win-x64
@@ -37,7 +34,7 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}" -replace '^v', ''
           $version | Set-Content ./publish/version.txt -NoNewline
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: DTM-windows
           path: ./publish
@@ -48,15 +45,15 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
       - name: Publish linux-x64
         run: dotnet publish DTM.csproj -c Release -r linux-x64 --self-contained true -o ./publish
       - name: version.txt erstellen
         run: echo -n "${GITHUB_REF_NAME#v}" > ./publish/version.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: DTM-linux
           path: ./publish
@@ -69,11 +66,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: DTM-windows
           path: ./DTM-windows
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: DTM-linux
           path: ./DTM-linux
