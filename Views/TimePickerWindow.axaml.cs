@@ -1,21 +1,13 @@
-using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using DTM.ViewModels;
 
 namespace DTM.Views;
 
-public partial class TimePickerWindow : Window
+public partial class TimePickerWindow : ChromeWindow
 {
     public TimePickerWindow()
     {
         InitializeComponent();
-    }
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
     }
 
     private void OnTitleClose(object? _, RoutedEventArgs e) => Close(TimePickResult.Cancel());

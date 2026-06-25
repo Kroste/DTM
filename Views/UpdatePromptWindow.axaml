@@ -3,9 +3,8 @@
         x:Class="DTM.Views.UpdatePromptWindow"
         Title="Update verfügbar"
         Width="440" Height="200"
-        WindowStartupLocation="CenterOwner"
-        CanResize="False"
-        SystemDecorations="BorderOnly">
+        MinWidth="420" MinHeight="180"
+        WindowStartupLocation="CenterOwner">
 
     <Grid RowDefinitions="Auto,*">
 

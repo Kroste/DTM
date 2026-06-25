@@ -8,8 +8,8 @@
         x:DataType="vm:SessionsViewModel"
         Title="Sessions"
         Width="800" Height="490"
-        WindowStartupLocation="CenterOwner"
-        SystemDecorations="BorderOnly">
+        MinWidth="600" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
 
     <Grid RowDefinitions="Auto,*">
 

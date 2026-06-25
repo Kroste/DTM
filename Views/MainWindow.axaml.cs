@@ -1,12 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using DTM.ViewModels;
 
 namespace DTM.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : ChromeWindow
 {
     public MainWindow()
     {
@@ -24,17 +23,6 @@ public partial class MainWindow : Window
         if (change.Property == WindowStateProperty)
             MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "☐";
     }
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
-    }
-
-    private void OnTitleBarDoubleTapped(object? sender, TappedEventArgs e) =>
-        WindowState = WindowState == WindowState.Maximized
-            ? WindowState.Normal
-            : WindowState.Maximized;
 
     private void OnMinimize(object? _, RoutedEventArgs e) =>
         WindowState = WindowState.Minimized;

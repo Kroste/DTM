@@ -1,11 +1,9 @@
-using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using DTM.ViewModels;
 
 namespace DTM.Views;
 
-public partial class ConnectionManagerWindow : Window
+public partial class ConnectionManagerWindow : ChromeWindow
 {
     public ConnectionManagerWindow()
     {
@@ -13,12 +11,6 @@ public partial class ConnectionManagerWindow : Window
     }
 
     private ConnectionManagerViewModel Vm => (ConnectionManagerViewModel)DataContext!;
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
-    }
 
     private void OnTitleClose(object? _, RoutedEventArgs e) => Close();
 

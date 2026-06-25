@@ -103,7 +103,13 @@ public sealed class AnsiConsole : UserControl
         }
         var top = TopLevel.GetTopLevel(this);
         if (top?.Clipboard is { } clip)
-            await clip.SetTextAsync(sb.ToString()).ConfigureAwait(false);
+        {
+            // Avalonia 12: SetTextAsync wurde aus IClipboard entfernt; stattdessen
+            // DataTransfer + DataTransferItem.CreateText über SetDataAsync setzen.
+            var data = new DataTransfer();
+            data.Add(DataTransferItem.CreateText(sb.ToString()));
+            await clip.SetDataAsync(data).ConfigureAwait(false);
+        }
     }
 
     /// <summary>Räumt den Buffer komplett auf.</summary>

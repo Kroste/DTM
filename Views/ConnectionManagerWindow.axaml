@@ -9,8 +9,8 @@
         x:DataType="vm:ConnectionManagerViewModel"
         Title="Verbindungen verwalten"
         Width="700" Height="600"
-        WindowStartupLocation="CenterOwner"
-        SystemDecorations="BorderOnly">
+        MinWidth="560" MinHeight="480"
+        WindowStartupLocation="CenterOwner">
 
     <Grid RowDefinitions="Auto,*">
 
@@ -67,21 +67,21 @@
                                VerticalAlignment="Center" Margin="0,0,8,6" />
                     <TextBox   Grid.Row="1" Grid.Column="1"
                                Text="{Binding SambaSource, Mode=TwoWay}"
-                               Watermark="leer = eingebauter Default"
+                               PlaceholderText="leer = eingebauter Default"
                                Margin="0,0,0,6" />
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Modulpfad (Override)"
                                VerticalAlignment="Center" Margin="0,0,8,6" />
                     <TextBox   Grid.Row="2" Grid.Column="1"
                                Text="{Binding ModulePath, Mode=TwoWay}"
-                               Watermark="leer = Samba-Logik aktiv"
+                               PlaceholderText="leer = Samba-Logik aktiv"
                                Margin="0,0,0,6" />
 
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Update-Quelle"
                                VerticalAlignment="Center" Margin="0,0,8,6" />
                     <TextBox   Grid.Row="3" Grid.Column="1"
                                Text="{Binding UpdateSource, Mode=TwoWay}"
-                               Watermark="UNC-Pfad zum Update-Verzeichnis (leer = kein Check)"
+                               PlaceholderText="UNC-Pfad zum Update-Verzeichnis (leer = kein Check)"
                                Margin="0,0,0,6" />
 
                     <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal"

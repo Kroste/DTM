@@ -12,8 +12,7 @@
         Width="1280" Height="780"
         MinWidth="980" MinHeight="620"
         Background="{DynamicResource WindowBgBrush}"
-        WindowStartupLocation="CenterScreen"
-        SystemDecorations="BorderOnly">
+        WindowStartupLocation="CenterScreen">
 
     <Grid RowDefinitions="Auto,*,Auto">
 

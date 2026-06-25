@@ -1,6 +1,4 @@
 using System.Reflection;
-using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -9,7 +7,7 @@ using DTM.Updater;
 
 namespace DTM.Views;
 
-public partial class AboutWindow : Window
+public partial class AboutWindow : ChromeWindow
 {
     public AboutWindow()
     {
@@ -27,12 +25,6 @@ public partial class AboutWindow : Window
             LogoImage.Source = new Bitmap(AssetLoader.Open(logoUri));
         else
             LogoImage.IsVisible = false;
-    }
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
     }
 
     private void OnTitleClose(object? _, RoutedEventArgs e) => Close();

@@ -1,12 +1,10 @@
-using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 
 namespace DTM.Views;
 
 public enum UpdateDialogResult { ApplyNow, Later, Skip }
 
-public partial class UpdatePromptWindow : Window
+public partial class UpdatePromptWindow : ChromeWindow
 {
     public UpdateDialogResult Result { get; private set; } = UpdateDialogResult.Skip;
 
@@ -18,12 +16,6 @@ public partial class UpdatePromptWindow : Window
         MessageText.Text =
             $"Version {newVersion} ist verfügbar (aktuell: {currentVersion}).\n" +
             "Jetzt aktualisieren?";
-    }
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
     }
 
     private void OnTitleClose(object? _, RoutedEventArgs e) => Close();

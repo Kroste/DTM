@@ -42,7 +42,7 @@ public partial class ConsoleControl : UserControl
     {
         base.OnAttachedToVisualTree(e);
 
-        if (!_windowCloseRegistered && e.Root is Window w)
+        if (!_windowCloseRegistered && TopLevel.GetTopLevel(this) is Window w)
         {
             _windowCloseRegistered = true;
             w.Closed += (_, _) => Stop();

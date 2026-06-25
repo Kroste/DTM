@@ -8,9 +8,8 @@
         x:DataType="vm:EditConnectionViewModel"
         Title="Verbindung bearbeiten"
         Width="460" Height="380"
-        CanResize="False"
-        WindowStartupLocation="CenterOwner"
-        SystemDecorations="BorderOnly">
+        MinWidth="420" MinHeight="340"
+        WindowStartupLocation="CenterOwner">
 
     <Grid RowDefinitions="Auto,*">
 

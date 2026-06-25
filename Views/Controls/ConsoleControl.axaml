@@ -30,7 +30,7 @@
                          CaretBrush="#2DD4BF"
                          FontFamily="Cascadia Mono, Consolas, Menlo, Monospace"
                          FontSize="13"
-                         Watermark="Befehl eingeben…"
+                         PlaceholderText="Befehl eingeben…"
                          KeyDown="OnInputKeyDown" />
             </Grid>
         </Border>

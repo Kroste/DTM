@@ -8,9 +8,8 @@
         x:DataType="vm:TimePickerViewModel"
         Title="Zeit wählen"
         Width="320" Height="260"
-        CanResize="False"
-        WindowStartupLocation="CenterOwner"
-        SystemDecorations="BorderOnly">
+        MinWidth="300" MinHeight="240"
+        WindowStartupLocation="CenterOwner">
 
     <Grid RowDefinitions="Auto,*">
 

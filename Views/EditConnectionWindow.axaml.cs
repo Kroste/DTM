@@ -1,20 +1,12 @@
-using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
 
 namespace DTM.Views;
 
-public partial class EditConnectionWindow : Window
+public partial class EditConnectionWindow : ChromeWindow
 {
     public EditConnectionWindow()
     {
         InitializeComponent();
-    }
-
-    private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            BeginMoveDrag(e);
     }
 
     private void OnTitleClose(object? _, RoutedEventArgs e) => Close(false);
