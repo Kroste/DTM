@@ -313,8 +313,10 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       3.4 bringt für MSSQL einen dedizierten Recovery-Mode-Dropdown
       (FULL/SIMPLE/BULK_LOGGED), der die Mehrdeutigkeit für den MSSQL-Pfad
       auflöst. — `S` _(siehe „Akzeptierte Abweichungen" oben)_
-- [ ] **1.2** Snapshot-Buttons: Multi-PDB-Warnung für Oracle vor `Restore-Snapshot`
-      (`⚠ CDB wird heruntergefahren, betrifft alle PDBs`). — `S` 🛡
+- [x] **1.2** Snapshot-Buttons: Multi-PDB-Warnung für Oracle vor `Restore-Snapshot`
+      — übersprungen, wird durch 1.4 (Restore-Vorschau-Dialog mit Restore-Points-
+      und PDB-Liste) abgedeckt. Eigener Stop-Gap-Quick-Fix wäre Wegwerfcode. — `S` 🛡
+      _(skip, siehe 1.4)_
 - [ ] **1.3** Cluster-Health-Indicator (`Get-ClusterHealthStatus`) in Info-Card oder
       als Status-Punkt. MSSQL-only, read-only. — `S`
 - [ ] **1.4** Oracle-Restore-Vorschau (`Get-OracleRestoreInfo`) — neuer Dialog
