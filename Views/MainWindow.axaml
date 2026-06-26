@@ -217,6 +217,34 @@
                             </StackPanel>
                         </StackPanel>
 
+                        <!-- Gruppe: Wartung (MSSQL-only) -->
+                        <StackPanel IsVisible="{Binding MaintenanceVisible}">
+                            <TextBlock Classes="groupLabel" Text="WARTUNG" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="action" Command="{Binding RunCheckDbCommand}"
+                                        ToolTip.Tip="DBCC CHECKDB — Integritaetspruefung der Datenbank">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x2714;" />
+                                        <TextBlock Text="CHECKDB" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action" Command="{Binding RunIndexRebuildCommand}"
+                                        ToolTip.Tip="ALTER INDEX ALL ... REBUILD + UPDATE STATISTICS">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x21BB;" />
+                                        <TextBlock Text="Index Rebuild" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="action danger" Command="{Binding RunShrinkLogCommand}"
+                                        ToolTip.Tip="DBCC SHRINKFILE auf das Logfile (bricht Log-Chain!)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x21F2;" />
+                                        <TextBlock Text="Shrink Log" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
                         <!-- Gruppe: Archive-Log -->
                         <StackPanel>
                             <TextBlock Classes="groupLabel" Text="ARCHIVE-LOG" />

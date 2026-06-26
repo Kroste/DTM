@@ -52,6 +52,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     // Gruppe aus, bis ein RMAN-Wrapper kommt.
     [ObservableProperty] private bool _backupBrowserVisible;
 
+    // Wartungs-Gruppe (DBCC CHECKDB / Index-Rebuild / Shrink-Log) ist
+    // T-SQL-spezifisch und nur fuer MSSQL sichtbar.
+    [ObservableProperty] private bool _maintenanceVisible;
+
     private List<Session> _currentSessions = new();
 
     // Initial-Setup der pwsh-Session:
@@ -90,6 +94,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ArchiveLogOffEnabled = false;
         ClusterHealthVisible = false;
         BackupBrowserVisible = false;
+        MaintenanceVisible = false;
 
         switch (value)
         {
@@ -137,6 +142,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             ArchiveLogOffEnabled =  recoveryOn;
             ClusterHealthVisible = true;
             BackupBrowserVisible = true;
+            MaintenanceVisible   = true;
             BackupButtonText = "Backup";
             DbName = m.Name ?? "—";
             DbHost = m.Server ?? "—";
@@ -340,6 +346,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ArchiveLogOffEnabled = false;
         ClusterHealthVisible = false;
         BackupBrowserVisible = false;
+        MaintenanceVisible = false;
         StatusBar = "Verbindungen aktualisiert.";
         _logger.Debug("Verbindungen neu geladen: {0} Server.", newServers.Count);
     }
@@ -352,6 +359,47 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(DbHost) || DbHost == "—") return;
         DTM.Data.Terminal.TerminalBus.RunFocSqlServerAction(
             "Get-ClusterHealthStatus", DbHost, "Cluster-Health");
+    }
+
+    // --- Wartung (Phase 3.2, MSSQL-only via Invoke-DbMaintenance) ---
+
+    [RelayCommand]
+    private void RunCheckDb()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Invoke-DbMaintenance", db, "-CheckDb", "DBCC CHECKDB");
+    }
+
+    [RelayCommand]
+    private void RunIndexRebuild()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        RunSimpleAction("Invoke-DbMaintenance", db, "-IndexRebuild", "Index-Rebuild");
+    }
+
+    [RelayCommand]
+    private async Task RunShrinkLog()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+
+        Window? owner = GetMainWindow();
+        if (owner is null) return;
+
+        ConfirmWindow dlg = new()
+        {
+            WindowTitle = "Logdatei verkleinern?",
+            Message = $"Die Log-Datei der Datenbank „{db.Database.Name}\" wird per DBCC SHRINKFILE verkleinert.\n\n"
+                    + "Die Funktion schaltet intern auf Recovery-Modus SIMPLE und wieder zurueck — "
+                    + "dadurch wird die Log-Chain unterbrochen. Point-in-Time-Restore ab diesem Zeitpunkt "
+                    + "ist erst nach dem naechsten Voll-Backup wieder moeglich.\n\nWirklich fortfahren?",
+            ConfirmText = "Shrinken",
+            CancelText = "Abbrechen",
+        };
+
+        bool ok = await dlg.ShowDialog<bool>(owner);
+        if (!ok) return;
+
+        RunSimpleAction("Invoke-DbMaintenance", db, "-ShrinkLog", "Shrink-Log");
     }
 
     // Backup-Browser: Dialog mit allen .bak-Dateien der selektierten MSSQL-DB,
