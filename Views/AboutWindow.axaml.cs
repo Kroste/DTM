@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Avalonia.Interactivity;
 using Avalonia.Media.Imaging;
@@ -9,6 +10,9 @@ namespace DTM.Views;
 
 public partial class AboutWindow : ChromeWindow
 {
+    private const string GitHubUrl = "https://github.com/Kroste/DTM";
+    private const string BuyMeCoffeeUrl = "https://buymeacoffee.com/kroste";
+
     public AboutWindow()
     {
         InitializeComponent();
@@ -28,6 +32,26 @@ public partial class AboutWindow : ChromeWindow
     }
 
     private void OnTitleClose(object? _, RoutedEventArgs e) => Close();
+
+    private void OnOpenGitHub(object? _, RoutedEventArgs e) => OpenUrl(GitHubUrl);
+    private void OnOpenBuyMeCoffee(object? _, RoutedEventArgs e) => OpenUrl(BuyMeCoffeeUrl);
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true,
+            });
+        }
+        catch
+        {
+            // Wenn der Default-Browser nicht startbar ist (z.B. headless),
+            // bewusst still ignorieren — der Link steht im UI-Tooltip.
+        }
+    }
 
     private async void OnCheckUpdate(object? _, RoutedEventArgs e)
     {

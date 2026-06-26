@@ -363,8 +363,11 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 - [ ] **4.1** Snapshot-Cleanup mit Altersfilter (`Database-Snapshot-Delete -Day n`)
       als Option im Remove-Snapshot-Dialog. — `S` 📦 (optional)
-- [ ] **4.2** `AboutWindow` ergänzen: GitHub-Link auf `https://github.com/Kroste/DTM`
+- [x] **4.2** `AboutWindow` ergänzen: GitHub-Link auf `https://github.com/Kroste/DTM`
       + „Buy me a coffee"-Button (`buymeacoffee.com`). — `S`
+      _(erledigt: dieser Commit; zwei Buttons vor dem Footer, BMC-URL
+      `https://buymeacoffee.com/kroste` aus `.github/FUNDING.yml`. Browser-Open
+      via `ProcessStartInfo { UseShellExecute = true }`.)_
 - [x] **4.3** `.vscode/tasks.json` ergänzen: Hard-Clean-Task (rekursives Löschen
       `bin/`/`obj/`) + Task „Aktuelles Logfile öffnen" (`logs/info.log`/`error.log`). — `S`
       _(erledigt: `90fe0ba`; drei cross-platform Tasks „hard clean (bin + obj)",
