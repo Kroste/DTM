@@ -230,6 +230,21 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
   Einstellungen in `ConnectionManagerWindow`). Submodul-Inhalt aktualisieren bei
   Bedarf: `git submodule update --remote external/FOC-SQL`.
 
+- **FOC-SQL-Cmdlet ergänzen — Drei-Punkt-Checkliste:** Wenn eine neue Funktion
+  ins FOC-SQL-Submodul kommt (für ein 📦-Roadmap-Item), müssen **alle drei**
+  Files konsistent gepflegt werden — sonst ist die Funktion im Code da, wird aber
+  zur Laufzeit nicht exportiert (Falle: `Get-Command <Cmdlet>` findet sie nicht,
+  Fehlersuche schwer):
+  1. **`Module/FOC-SQL/FOC-SQL.psm1`** — Funktionsdefinition + `Export-ModuleMember -Function <Name>` am Dateiende
+  2. **`Module/FOC-SQL/FOC-SQL.psd1`** — `FunctionsToExport`-Whitelist erweitern (Modul-Manifest filtert sonst beim Import)
+  3. **`Module/FOC-SQL_ToExport.ps1`** — Generator-Script konsistent halten (regeneriert `.psd1` per `New-ModuleManifest`)
+
+  Sanity-Check nach Samba-Rollout: in einem frischen PowerShell-Runspace
+  `Import-Module FOC-SQL; Get-Command <NeuesCmdlet>` — wenn nichts kommt, fehlt
+  vermutlich der Eintrag in 2. oder 3. Lehre aus Phase 2: ich hatte 1+3 angepasst,
+  aber 2 vergessen → `BackupBrowserService` warf „Modul nicht geladen" obwohl
+  die `.psm1` korrekt war.
+
 ---
 
 ## Projektspezifische Realität & offene Migrationen
@@ -274,8 +289,9 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 > **Legende:** `S` = klein (1–3 h, 1 Commit) · `M` = mittel (halber Tag, 2–4 Commits) ·
 > `L` = groß (mehrere Tage). 📦 = FOC-SQL-Submodul muss erweitert werden
 > (eigener PR in `Kroste/FOC-SQL` + manueller Samba-Rollout durch Lars,
-> danach DTM ankoppeln). 🛡 = destruktive Aktion, braucht Bestätigungs-Dialog
-> + Test-DB. 🔁 = setzt vorheriges Item voraus.
+> danach DTM ankoppeln — **`.psm1` + `.psd1` + `_ToExport.ps1` konsistent**
+> halten, siehe DTM-Konventionen). 🛡 = destruktive Aktion, braucht
+> Bestätigungs-Dialog + Test-DB. 🔁 = setzt vorheriges Item voraus.
 
 #### Phase 0 — Fundament (Schutz vor späteren Regressionen)
 
