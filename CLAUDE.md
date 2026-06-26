@@ -382,15 +382,28 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 #### Phase 3 — Wartungs-Tooling
 
-- [ ] **3.1** 📦 FOC-SQL erweitern: `Invoke-DbMaintenance` mit Switches
+- [x] **3.1** 📦 FOC-SQL erweitern: `Invoke-DbMaintenance` mit Switches
       (`-CheckDb`, `-IndexRebuild`, `-ShrinkLog`) — Wrapper um die drei
-      MSSQL-Funktionen, Oracle vorerst Pass-Through. — `M`
-- [ ] **3.2** 🔁 Neue Action-Gruppe „WARTUNG" im MainWindow (drei Buttons im
-      Stil der bestehenden Gruppen, MSSQL-only-Filter). — `S`
-- [ ] **3.3** 📦 FOC-SQL erweitern: `Set-DbRecoveryMode` (Wrapper um
-      `Database-Set-Recovery-Mode`). — `S`
-- [ ] **3.4** 🔁 Recovery-Mode-Dropdown im Info-Card (FULL/SIMPLE/BULK_LOGGED)
+      MSSQL-Funktionen via PSSession + `Import-Module MSSQL`. Oracle wird
+      explizit nicht unterstützt (T-SQL-spezifisch). — `M`
+      _(erledigt: FOC-SQL `333b734`, Submodul-Pointer DTM `0006249`. Drei-
+      Punkt-Checkliste `.psm1`+`.psd1`+`_ToExport.ps1` eingehalten.)_
+- [x] **3.2** 🔁 Neue Action-Gruppe „WARTUNG" im MainWindow mit drei Buttons
+      (CHECKDB / Index Rebuild / Shrink Log), MSSQL-only via
+      `MaintenanceVisible`-Binding. Shrink-Log triggert vorab den
+      `ConfirmWindow` mit Log-Chain-Hinweis; CHECKDB und Index-Rebuild
+      laufen direkt. — `S`
+      _(erledigt: DTM `df92c5c`.)_
+- [x] **3.3** 📦 FOC-SQL erweitern: `Set-DbRecoveryMode` als Wrapper um
+      `Database-Set-Recovery-Mode` (ValidateSet FULL/SIMPLE/BULK_LOGGED). — `S`
+      _(erledigt: FOC-SQL `a5869b4`, Submodul-Pointer DTM `7daf557`.)_
+- [x] **3.4** 🔁 Recovery-Mode-Dropdown im Info-Card (FULL/SIMPLE/BULK_LOGGED)
       für MSSQL, mit Bestätigung — Wechsel zu SIMPLE bricht Log-Chain. — `S`
+      _(erledigt: DTM `31e938a`. ComboBox ersetzt bei MSSQL den
+      Read-Only-TextBlock; bei Oracle bleibt der TextBlock mit
+      `ArchiveLogMode`. Suppression-Flag verhindert dass das initiale
+      Server-Sync den Change-Dialog triggert; bei User-Abbruch wird die
+      ComboBox auf den zuletzt synchronisierten Wert zurueckgedreht.)_
 
 #### Phase 4 — Polish & Komfort
 
