@@ -54,10 +54,17 @@ public static class TerminalBus
     /// <param name="database">Datenbankname (MSSQL) bzw. FQDN (Oracle).</param>
     /// <param name="when">Geplanter Zeitpunkt oder null = sofort.</param>
     /// <param name="title">Header-Zeile im Tab.</param>
+    /// <param name="server">
+    /// Optional: Hostname des MSSQL-Servers (-Server &lt;host&gt; ans Cmdlet
+    /// anhaengen). Bei null bleibt der Modul-Default ($global:Server) — fuer
+    /// Oracle-Aufrufe irrelevant (Oracle bekommt das Ziel ueber den FQDN
+    /// im -Database-Parameter mit). Wird in Phase 6 (Multi-Server-Support)
+    /// benoetigt, damit DTM mehrere MSSQL-Hosts unterscheiden kann.
+    /// </param>
     /// <param name="onUnavailable">Fallback wenn kein pwsh-Tab aktiv ist.</param>
     public static void RunFocSqlAction(
         string functionName, string database, DateTime? when,
-        string title, Action? onUnavailable = null)
+        string title, string? server = null, Action? onUnavailable = null)
     {
         ITerminalSession? sess;
         lock (_lock) sess = _powerShellSession;
@@ -70,7 +77,8 @@ public static class TerminalBus
         }
 
         string timing = when.HasValue ? $"geplant {when.Value:g}" : "sofort";
-        _logger.Info("TerminalBus: {0} für '{1}' ({2})", functionName, database, timing);
+        _logger.Info("TerminalBus: {0} für '{1}'@'{2}' ({3})",
+            functionName, database, server ?? "<default>", timing);
 
         if (sess is ITerminalBusInjector injector)
         {
@@ -79,6 +87,11 @@ public static class TerminalBus
         }
 
         string call = FocSqlRuntime.BuildCall(functionName, database, when);
+        if (!string.IsNullOrWhiteSpace(server))
+        {
+            string srvEsc = server.Replace("'", "''");
+            call += $" -Server '{srvEsc}'";
+        }
         _ = sess.SendCommandAsync(call);
     }
 
@@ -92,10 +105,14 @@ public static class TerminalBus
     /// <param name="database">Datenbankname.</param>
     /// <param name="extraArgs">Zusätzliche Argumente, z.B. "-Off" für Archive-Log.</param>
     /// <param name="title">Header im Tab.</param>
+    /// <param name="server">
+    /// Optional: MSSQL-Host (-Server &lt;host&gt; ans Cmdlet). Siehe
+    /// <see cref="RunFocSqlAction"/> fuer Details.
+    /// </param>
     /// <param name="onUnavailable">Fallback wenn kein pwsh-Tab aktiv.</param>
     public static void RunFocSqlSimple(
         string functionName, string database, string extraArgs,
-        string title, Action? onUnavailable = null)
+        string title, string? server = null, Action? onUnavailable = null)
     {
         ITerminalSession? sess;
         lock (_lock) sess = _powerShellSession;
@@ -107,7 +124,8 @@ public static class TerminalBus
             return;
         }
 
-        _logger.Info("TerminalBus: {0} für '{1}'", functionName, database);
+        _logger.Info("TerminalBus: {0} für '{1}'@'{2}'",
+            functionName, database, server ?? "<default>");
 
         if (sess is ITerminalBusInjector injector)
         {
@@ -119,6 +137,11 @@ public static class TerminalBus
         string call = $"{functionName} -Database '{dbEsc}'";
         if (!string.IsNullOrWhiteSpace(extraArgs))
             call += " " + extraArgs;
+        if (!string.IsNullOrWhiteSpace(server))
+        {
+            string srvEsc = server.Replace("'", "''");
+            call += $" -Server '{srvEsc}'";
+        }
 
         _ = sess.SendCommandAsync(call);
     }

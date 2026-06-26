@@ -3,19 +3,27 @@ using NLog;
 
 namespace DTM.ViewModels.TreeNodes;
 
+/// <summary>
+/// Tree-Knoten fuer einen einzelnen Server (Hostname). Liegt unter einem
+/// <see cref="ServerGroupNodeViewModel"/>. Beim Expand laedt der Knoten
+/// die Datenbank-Liste seines Servers via <see cref="IDTM_DATA"/> und legt
+/// pro DB einen <see cref="DatabaseNodeViewModel"/> als Child an.
+/// </summary>
 public sealed class ServerNodeViewModel : NodeViewModelBase
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private readonly IDTM_DATA _data;
     private bool _childrenLoaded;
 
-    public DB_SERVER.ServerTyp ServerTyp { get; }
+    public ServerIdentity Identity { get; }
+    public DB_SERVER.ServerTyp ServerTyp => Identity.Typ;
+    public string ServerHost => Identity.Server;
 
-    public ServerNodeViewModel(DB_SERVER.ServerTyp typ, IDTM_DATA data)
+    public ServerNodeViewModel(ServerIdentity identity, IDTM_DATA data)
     {
-        ServerTyp = typ;
+        Identity = identity;
         _data = data;
-        Header = typ.ToString();
+        Header = string.IsNullOrWhiteSpace(identity.Server) ? identity.Typ.ToString() : identity.Server;
     }
 
     protected override void OnExpanded()
@@ -35,19 +43,19 @@ public sealed class ServerNodeViewModel : NodeViewModelBase
         IsLoading = true;
         try
         {
-            var dbs = await Task.Run(() => _data.get_Database_Names(ServerTyp));
+            var dbs = await Task.Run(() => _data.get_Database_Names(Identity));
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 Children.Clear();
                 foreach (var db in dbs)
                 {
-                    Children.Add(new DatabaseNodeViewModel(db, ServerTyp));
+                    Children.Add(new DatabaseNodeViewModel(db, Identity));
                 }
             });
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, $"Fehler beim Laden der DBs für {ServerTyp}.");
+            _logger.Error(ex, $"Fehler beim Laden der DBs für {Identity}.");
             _childrenLoaded = false;
         }
         finally

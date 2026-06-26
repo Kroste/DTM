@@ -26,38 +26,37 @@ public class DtmDataTests
         }
     }
 
-    private static (DTM_DATA data, FakeFactory factory) Make(DB_SERVER.ServerTyp typ)
+    private static (DTM_DATA data, FakeFactory factory, ServerIdentity identity) Make(
+        DB_SERVER.ServerTyp typ, string host = "testhost")
     {
         var factory = new FakeFactory();
-        var servers = new Dictionary<DB_SERVER.ServerTyp, DB_SERVER>
-        {
-            [typ] = new DB_SERVER(typ, new ServerCredential("server", "user", "pass", "db", ""))
-        };
-        return (new DTM_DATA(servers, factory), factory);
+        var server = new DB_SERVER(typ, new ServerCredential(host, "user", "pass", "db", ""));
+        var data = new DTM_DATA(new List<DB_SERVER> { server }, factory);
+        return (data, factory, server.Identity);
     }
 
     [Fact]
     public void GetDatabaseNames_Mssql_RequestsFactoryWithMssql()
     {
-        var (data, factory) = Make(DB_SERVER.ServerTyp.MSSQL);
-        data.get_Database_Names(DB_SERVER.ServerTyp.MSSQL);
+        var (data, factory, id) = Make(DB_SERVER.ServerTyp.MSSQL);
+        data.get_Database_Names(id);
         factory.LastRequested.Should().Be("MSSQL");
     }
 
     [Fact]
     public void GetDatabaseNames_Oracle_RequestsFactoryWithOracle()
     {
-        var (data, factory) = Make(DB_SERVER.ServerTyp.ORACLE);
-        data.get_Database_Names(DB_SERVER.ServerTyp.ORACLE);
+        var (data, factory, id) = Make(DB_SERVER.ServerTyp.ORACLE);
+        data.get_Database_Names(id);
         factory.LastRequested.Should().Be("ORACLE");
     }
 
     [Fact]
     public void GetDatabaseNames_ReturnsOdbcResult()
     {
-        var (data, factory) = Make(DB_SERVER.ServerTyp.MSSQL);
+        var (data, factory, id) = Make(DB_SERVER.ServerTyp.MSSQL);
         factory.Odbc.Names = [new Database_Info { Name = "TestDB", Id = "1", FQDN = "", Status = Database_Status.up }];
-        var result = data.get_Database_Names(DB_SERVER.ServerTyp.MSSQL);
+        var result = data.get_Database_Names(id);
         result.Should().HaveCount(1);
         result[0].Name.Should().Be("TestDB");
     }
@@ -65,34 +64,52 @@ public class DtmDataTests
     [Fact]
     public void GetDatabaseStats_Mssql_RequestsFactoryWithMssql()
     {
-        var (data, factory) = Make(DB_SERVER.ServerTyp.MSSQL);
-        data.get_Database_Stats(DB_SERVER.ServerTyp.MSSQL, new Database_Info { Name = "db", Id = "1", FQDN = "", Status = Database_Status.up });
+        var (data, factory, id) = Make(DB_SERVER.ServerTyp.MSSQL);
+        data.get_Database_Stats(id, new Database_Info { Name = "db", Id = "1", FQDN = "", Status = Database_Status.up });
         factory.LastRequested.Should().Be("MSSQL");
     }
 
     [Fact]
     public void GetDatabaseStats_ReturnsOdbcResult()
     {
-        var (data, factory) = Make(DB_SERVER.ServerTyp.MSSQL);
+        var (data, factory, id) = Make(DB_SERVER.ServerTyp.MSSQL);
         var expected = new Database_Stats_MSSQL { Name = "MyDB" };
         factory.Odbc.Stats = expected;
-        var result = data.get_Database_Stats(DB_SERVER.ServerTyp.MSSQL, new Database_Info { Name = "MyDB", Id = "1", FQDN = "", Status = Database_Status.up });
+        var result = data.get_Database_Stats(id, new Database_Info { Name = "MyDB", Id = "1", FQDN = "", Status = Database_Status.up });
         result.Should().BeSameAs(expected);
     }
 
     [Fact]
-    public void DbServers_ExposedCorrectly()
+    public void Servers_ExposedAsList()
     {
-        var (data, _) = Make(DB_SERVER.ServerTyp.MSSQL);
-        data.db_Servers.Should().ContainKey(DB_SERVER.ServerTyp.MSSQL);
+        var (data, _, id) = Make(DB_SERVER.ServerTyp.MSSQL);
+        data.Servers.Should().HaveCount(1);
+        data.Servers[0].Identity.Should().Be(id);
     }
 
     [Fact]
-    public void GetDatabaseNames_MissingServerType_ThrowsNullRef()
+    public void GetDatabaseNames_UnknownIdentity_ThrowsKeyNotFound()
     {
-        var (data, _) = Make(DB_SERVER.ServerTyp.MSSQL);
-        // ORACLE key missing → FirstOrDefault returns default → Value is null → throws
-        Action act = () => data.get_Database_Names(DB_SERVER.ServerTyp.ORACLE);
-        act.Should().Throw<Exception>();
+        var (data, _, _) = Make(DB_SERVER.ServerTyp.MSSQL);
+        // Anderer Hostname → nicht in der Liste → ResolveServer wirft KeyNotFoundException
+        var unknown = new ServerIdentity(DB_SERVER.ServerTyp.MSSQL, "other-host");
+        Action act = () => data.get_Database_Names(unknown);
+        act.Should().Throw<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public void Constructor_MultipleServersSameType_AllAccessible()
+    {
+        var factory = new FakeFactory();
+        var s1 = new DB_SERVER(DB_SERVER.ServerTyp.MSSQL, new ServerCredential("hostA"));
+        var s2 = new DB_SERVER(DB_SERVER.ServerTyp.MSSQL, new ServerCredential("hostB"));
+        var data = new DTM_DATA(new List<DB_SERVER> { s1, s2 }, factory);
+
+        data.Servers.Should().HaveCount(2);
+        // Beide ueber ihre Identity einzeln auflosbar.
+        Action act1 = () => data.get_Database_Names(s1.Identity);
+        Action act2 = () => data.get_Database_Names(s2.Identity);
+        act1.Should().NotThrow();
+        act2.Should().NotThrow();
     }
 }

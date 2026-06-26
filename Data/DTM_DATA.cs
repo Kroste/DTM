@@ -6,45 +6,67 @@ namespace DTM
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        public Dictionary<DB_SERVER.ServerTyp, DB_SERVER> db_Servers { get; private set; }
+        // O(1)-Lookup per ServerIdentity; bewahrt zusaetzlich die Insertion-Order
+        // ueber die separate Liste, damit der Tree-Aufbau im UI eine stabile
+        // Reihenfolge sieht (wichtig bei vielen Servern in derselben Gruppe).
+        private readonly Dictionary<ServerIdentity, DB_SERVER> _byIdentity;
         private readonly IODBC_Factory _factory;
 
-        public DTM_DATA(Dictionary<DB_SERVER.ServerTyp, DB_SERVER> dB_SERVERs, IODBC_Factory factory)
+        public IReadOnlyList<DB_SERVER> Servers { get; }
+
+        public DTM_DATA(IReadOnlyList<DB_SERVER> servers, IODBC_Factory factory)
         {
-            this.db_Servers = dB_SERVERs;
-            this._factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            ArgumentNullException.ThrowIfNull(servers);
+            Servers = servers;
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            _byIdentity = servers.ToDictionary(s => s.Identity);
         }
 
-        public List<Database_Info> get_Database_Names(DB_SERVER.ServerTyp serverTyp)
+        public List<Database_Info> get_Database_Names(ServerIdentity identity)
         {
-            _logger.Debug("get_Database_Names: ServerTyp={0}", serverTyp);
+            _logger.Debug("get_Database_Names: {0}", identity);
             try
             {
-                var result = _factory.Get_DATA(serverTyp.ToString(), db_Servers.FirstOrDefault(x => x.Key == serverTyp).Value.serverCredential!)!.get_Datenbank_Names();
-                _logger.Info("get_Database_Names: {0} Datenbanken geladen.", result.Count);
+                DB_SERVER server = ResolveServer(identity);
+                var result = _factory
+                    .Get_DATA(server.Typ.ToString(), server.serverCredential!)!
+                    .get_Datenbank_Names();
+                _logger.Info("get_Database_Names: {0} Datenbanken geladen ({1}).", result.Count, identity);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "get_Database_Names fehlgeschlagen: ServerTyp={0}", serverTyp);
+                _logger.Error(ex, "get_Database_Names fehlgeschlagen: {0}", identity);
                 throw;
             }
         }
 
-        public Database_Stats get_Database_Stats(DB_SERVER.ServerTyp serverTyp, Database_Info database)
+        public Database_Stats get_Database_Stats(ServerIdentity identity, Database_Info database)
         {
-            _logger.Debug("get_Database_Stats: ServerTyp={0}, Datenbank={1}", serverTyp, database.Name);
+            _logger.Debug("get_Database_Stats: {0}, Datenbank={1}", identity, database.Name);
             try
             {
-                var result = _factory.Get_DATA(serverTyp.ToString(), db_Servers.FirstOrDefault(x => x.Key == serverTyp).Value.serverCredential!)!.GetDatabase_Stats(database);
-                _logger.Info("get_Database_Stats: Stats für '{0}' geladen.", database.Name);
+                DB_SERVER server = ResolveServer(identity);
+                var result = _factory
+                    .Get_DATA(server.Typ.ToString(), server.serverCredential!)!
+                    .GetDatabase_Stats(database);
+                _logger.Info("get_Database_Stats: Stats fuer '{0}' geladen ({1}).", database.Name, identity);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "get_Database_Stats fehlgeschlagen: ServerTyp={0}, Datenbank={1}", serverTyp, database.Name);
+                _logger.Error(ex, "get_Database_Stats fehlgeschlagen: {0}, Datenbank={1}", identity, database.Name);
                 throw;
             }
+        }
+
+        private DB_SERVER ResolveServer(ServerIdentity identity)
+        {
+            if (_byIdentity.TryGetValue(identity, out DB_SERVER? server))
+                return server;
+            throw new KeyNotFoundException(
+                $"Kein registrierter Server mit Identitaet '{identity}'. "
+                + "Pruefe ConnectionStore / DI-Setup.");
         }
     }
 }

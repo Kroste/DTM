@@ -9,15 +9,16 @@ public class MainWindowViewModelTests
 {
     private sealed class StubData : IDTM_DATA
     {
-        public List<Database_Info> get_Database_Names(DB_SERVER.ServerTyp t) => [];
-        public Database_Stats get_Database_Stats(DB_SERVER.ServerTyp t, Database_Info db)
+        public IReadOnlyList<DB_SERVER> Servers { get; init; } = Array.Empty<DB_SERVER>();
+        public List<Database_Info> get_Database_Names(ServerIdentity id) => [];
+        public Database_Stats get_Database_Stats(ServerIdentity id, Database_Info db)
             => new Database_Stats_MSSQL();
     }
 
     private static MainWindowViewModel MakeVm(params DB_SERVER.ServerTyp[] types)
     {
-        var servers = types.ToDictionary(t => t, t => new DB_SERVER(t, new ServerCredential()));
-        return new MainWindowViewModel(new StubData(), servers);
+        var servers = types.Select(t => new DB_SERVER(t, new ServerCredential())).ToList();
+        return new MainWindowViewModel(new StubData { Servers = servers }, servers);
     }
 
     private static DatabaseNodeViewModel MakeDbNode(string name, DB_SERVER.ServerTyp typ,

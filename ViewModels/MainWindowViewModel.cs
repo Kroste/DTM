@@ -93,13 +93,30 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel(
         IDTM_DATA data,
-        Dictionary<DB_SERVER.ServerTyp, DB_SERVER> servers,
+        IReadOnlyList<DB_SERVER> servers,
         IServiceProvider? services = null)
     {
         _data = data;
         _services = services;
-        foreach (var typ in servers.Keys)
-            RootNodes.Add(new ServerNodeViewModel(typ, data));
+        BuildRootNodes(servers);
+    }
+
+    private void BuildRootNodes(IReadOnlyList<DB_SERVER> servers)
+    {
+        RootNodes.Clear();
+        foreach (var group in servers
+                     .GroupBy(s => s.Typ)
+                     .OrderBy(g => g.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+        {
+            var groupNode = new ServerGroupNodeViewModel(group.Key);
+            foreach (var server in group.OrderBy(
+                         s => s.serverCredential?.Server ?? string.Empty,
+                         StringComparer.OrdinalIgnoreCase))
+            {
+                groupNode.Children.Add(new ServerNodeViewModel(server.Identity, _data));
+            }
+            RootNodes.Add(groupNode);
+        }
     }
 
     partial void OnSelectedNodeChanged(NodeViewModelBase? value)
@@ -113,6 +130,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         switch (value)
         {
+            case ServerGroupNodeViewModel:
+                // Statische Gruppen-Container — Selektion macht nichts (Children
+                // sind beim Aufbau bereits eingehaengt; IsExpanded steuert Anzeige).
+                break;
             case ServerNodeViewModel server:
                 _ = LoadServerAsync(server);
                 break;
@@ -133,7 +154,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         StatusBar = $"Lade Stats für {db.Database.Name}…";
         try
         {
-            Database_Stats stats = await Task.Run(() => _data.get_Database_Stats(db.ServerTyp, db.Database));
+            Database_Stats stats = await Task.Run(() => _data.get_Database_Stats(db.ServerIdentity, db.Database));
             await Dispatcher.UIThread.InvokeAsync(() => ApplyStats(stats));
             StatusBar = "Bereit";
         }
@@ -227,6 +248,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             database: ModuleDatabaseId(db),
             when: when,
             title: $"{label} {db.Database.Name}",
+            server: ServerParamFor(db),
             onUnavailable: () =>
                 Dispatcher.UIThread.Post(() =>
                     StatusBar = $"{label} nicht möglich: pwsh-Tab ist nicht bereit."));
@@ -243,6 +265,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         db.ServerTyp == DB_SERVER.ServerTyp.MSSQL
             ? db.Database.Name
             : (string.IsNullOrWhiteSpace(db.Database.FQDN) ? db.Database.Name : db.Database.FQDN!);
+
+    /// <summary>
+    /// Liefert den Server-Hostname fuer den FOC-SQL -Server-Parameter:
+    /// MSSQL → konkreter Hostname (mehrere MSSQL-Server unterscheidbar).
+    /// Oracle → <c>null</c> (Oracle adressiert ueber FQDN im -Database-Param,
+    /// das -Server-Argument geht an die DTM-Wrapper, die es bei Oracle ignorieren).
+    /// </summary>
+    internal static string? ServerParamFor(DatabaseNodeViewModel db) =>
+        db.ServerTyp == DB_SERVER.ServerTyp.MSSQL
+            ? db.ServerIdentity.Server
+            : null;
 
     [RelayCommand]
     private void DbToSamba()
@@ -327,6 +360,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             database: ModuleDatabaseId(db),
             extraArgs: extraArgs,
             title: $"{label} {db.Database.Name}",
+            server: ServerParamFor(db),
             onUnavailable: () =>
                 Dispatcher.UIThread.Post(() =>
                     StatusBar = $"{label} nicht möglich: pwsh-Tab ist nicht bereit."));
@@ -345,19 +379,17 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     private void ReloadFromStores()
     {
-        Dictionary<DB_SERVER.ServerTyp, DB_SERVER> newServers = new();
+        List<DB_SERVER> newServers = new();
         foreach (DTM.Config.ConnectionEntry entry in DTM.Config.ConnectionStore.Load())
         {
             if (Enum.TryParse<DB_SERVER.ServerTyp>(entry.Key, ignoreCase: true, out var typ))
-                newServers[typ] = new DB_SERVER(typ, entry.ToCredential());
+                newServers.Add(new DB_SERVER(typ, entry.ToCredential()));
         }
 
         _data = new DTM_DATA(newServers, new ODBC_Factory());
 
         SelectedNode = null;
-        RootNodes.Clear();
-        foreach (var typ in newServers.Keys)
-            RootNodes.Add(new ServerNodeViewModel(typ, _data));
+        BuildRootNodes(newServers);
 
         DbName = "—"; DbHost = "—"; DbStatus = "—"; DbVersion = "—";
         DbSize = "—"; RecoveryOrArchiveMode = "—"; ActiveSessionsCount = "0";
@@ -503,7 +535,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         BackupBrowserWindow dlg = new() { DataContext = vm };
 
         // Spinner ist sofort sichtbar, Daten laden parallel.
-        _ = vm.LoadAsync(ModuleDatabaseId(db));
+        _ = vm.LoadAsync(ModuleDatabaseId(db), ServerParamFor(db));
 
         await dlg.ShowDialog(owner);
     }

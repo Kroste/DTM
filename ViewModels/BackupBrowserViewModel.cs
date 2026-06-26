@@ -29,9 +29,15 @@ public sealed partial class BackupBrowserViewModel : ViewModelBase
         _service = service;
     }
 
-    public async Task LoadAsync(string database)
+    /// <summary>
+    /// Server-Hostname fuer den Restore-Aufruf (Multi-Server-Support).
+    /// </summary>
+    public string? ServerHost { get; set; }
+
+    public async Task LoadAsync(string database, string? server = null)
     {
         DatabaseName = database;
+        ServerHost = server;
         IsLoading = true;
         ErrorMessage = null;
         Backups.Clear();
@@ -40,7 +46,7 @@ public sealed partial class BackupBrowserViewModel : ViewModelBase
 
         try
         {
-            IReadOnlyList<MssqlBackup> list = await _service.FetchAsync(database);
+            IReadOnlyList<MssqlBackup> list = await _service.FetchAsync(database, server);
             foreach (MssqlBackup b in list) Backups.Add(b);
             HasBackups = Backups.Count > 0;
             SelectedBackup = Backups.FirstOrDefault();
@@ -65,10 +71,15 @@ public sealed partial class BackupBrowserViewModel : ViewModelBase
     {
         if (backup is null || string.IsNullOrWhiteSpace(DatabaseName)) return;
 
-        // Invoke-DbRestore -Database '<db>' -BackupFile '<file>'
+        // Invoke-DbRestore -Database '<db>' -BackupFile '<file>' [-Server '<host>']
         string dbEsc = DatabaseName.Replace("'", "''");
         string fileEsc = backup.Name.Replace("'", "''");
         string script = $"Invoke-DbRestore -Database '{dbEsc}' -BackupFile '{fileEsc}'";
+        if (!string.IsNullOrWhiteSpace(ServerHost))
+        {
+            string srvEsc = ServerHost.Replace("'", "''");
+            script += $" -Server '{srvEsc}'";
+        }
         TerminalBus.SendScript(script);
     }
 }

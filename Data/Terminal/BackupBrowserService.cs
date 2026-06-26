@@ -25,7 +25,8 @@ public sealed class BackupBrowserService
     /// Wirft <see cref="InvalidOperationException"/> bei Modul-Import- oder
     /// Cmdlet-Fehlern.
     /// </summary>
-    public Task<IReadOnlyList<MssqlBackup>> FetchAsync(string database, CancellationToken ct = default)
+    public Task<IReadOnlyList<MssqlBackup>> FetchAsync(
+        string database, string? server = null, CancellationToken ct = default)
     {
         return Task.Run<IReadOnlyList<MssqlBackup>>(() =>
         {
@@ -61,6 +62,8 @@ public sealed class BackupBrowserService
 
             ps.AddCommand("Get-DbBackups")
               .AddParameter("Database", database);
+            if (!string.IsNullOrWhiteSpace(server))
+                ps.AddParameter("Server", server);
 
             Collection<PSObject> results = ps.Invoke();
             PowerShellDiagnostics.ThrowIfErrors(ps, $"Get-DbBackups -Database '{database}'");
