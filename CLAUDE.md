@@ -361,8 +361,11 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 #### Phase 4 — Polish & Komfort
 
-- [ ] **4.1** Snapshot-Cleanup mit Altersfilter (`Database-Snapshot-Delete -Day n`)
-      als Option im Remove-Snapshot-Dialog. — `S` 📦 (optional)
+- [x] **4.1** Snapshot-Cleanup mit Altersfilter — **nicht relevant für DTM**.
+      Das automatische Löschen alter Snapshots läuft bereits als SQL-Server-Agent-Job
+      auf dem MSSQL-Server (`Database-Snapshot-Delete -Day n` wird dort regelmäßig
+      ausgeführt). DTM braucht dafür keinen UI-Pfad. — `S` 📦
+      _(skip, redundant zum Server-Side-Job)_
 - [x] **4.2** `AboutWindow` ergänzen: GitHub-Link auf `https://github.com/Kroste/DTM`
       + „Buy me a coffee"-Button (`buymeacoffee.com`). — `S`
       _(erledigt: dieser Commit; zwei Buttons vor dem Footer, BMC-URL
