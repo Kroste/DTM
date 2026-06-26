@@ -378,8 +378,13 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       _(erledigt: dieser Commit; MinVer 7.0.0 mit `MinVerTagPrefix=v`; ab jetzt
       kommt die Version aus dem juengsten Git-Tag. Zwischen Tags gibt's
       pre-release-Versionen wie `1.1.1-alpha.0.2+<sha>`.)_
-- [ ] **4.5** `.github/workflows/release.yml` um AppImage-Job erweitern
+- [x] **4.5** `.github/workflows/release.yml` um AppImage-Job erweitern
       (Node 24 ist bereits gesetzt). — `M`
+      _(erledigt: `9121cab`; neuer `build-appimage`-Job (Publish + AppDir +
+      `appimagetool`), `packaging/appimage/dtm.desktop` + `AppRun` als Repo-Files,
+      `workflow_dispatch`-Trigger für Build-Tests ohne Tag, `release`-Job
+      conditional auf Tag-Push. Manual dispatch hat alle 4 Build-Jobs grün
+      laufen lassen.)_
 - [ ] **4.6** `README.md` um Screenshot ergänzen. — `S`
 
 #### Phase 5 — Optional / Niedrige Priorität
