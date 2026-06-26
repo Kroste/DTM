@@ -56,6 +56,20 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     // T-SQL-spezifisch und nur fuer MSSQL sichtbar.
     [ObservableProperty] private bool _maintenanceVisible;
 
+    // Recovery-Mode-Dropdown im Info-Card (MSSQL-only). Oracle zeigt
+    // stattdessen den read-only ArchiveLogMode-TextBlock.
+    [ObservableProperty] private bool _recoveryModeVisible;
+    [ObservableProperty] private string _recoveryModeSelected = "FULL";
+
+    public IReadOnlyList<string> RecoveryModeOptions { get; } =
+        new[] { "FULL", "SIMPLE", "BULK_LOGGED" };
+
+    // Schutz vor Rekursion: ApplyStats setzt RecoveryModeSelected aus dem
+    // Server-Stand — der ComboBox-Selection-Changed-Handler darf das nicht
+    // als User-Aktion missverstehen und Set-DbRecoveryMode aufrufen.
+    private bool _settingRecoveryModeInternally;
+    private string _lastSyncedRecoveryMode = string.Empty;
+
     private List<Session> _currentSessions = new();
 
     // Initial-Setup der pwsh-Session:
@@ -95,6 +109,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ClusterHealthVisible = false;
         BackupBrowserVisible = false;
         MaintenanceVisible = false;
+        RecoveryModeVisible = false;
 
         switch (value)
         {
@@ -151,6 +166,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             DbSize = $"{m.DataSizeMB.ToString(System.Globalization.CultureInfo.InvariantCulture)} MB";
             RecoveryLabel = "Recovery";
             RecoveryOrArchiveMode = m.RecorveryModel ?? "—";
+
+            // Dropdown auf aktuellen Server-Stand setzen, ohne den User-
+            // Change-Pfad zu triggern (Suppression-Flag).
+            SyncRecoveryModeFromStats(m.RecorveryModel);
         }
         else if (stats is Database_Stats_ORACLE o)
         {
@@ -347,6 +366,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ClusterHealthVisible = false;
         BackupBrowserVisible = false;
         MaintenanceVisible = false;
+        RecoveryModeVisible = false;
         StatusBar = "Verbindungen aktualisiert.";
         _logger.Debug("Verbindungen neu geladen: {0} Server.", newServers.Count);
     }
@@ -359,6 +379,71 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(DbHost) || DbHost == "—") return;
         DTM.Data.Terminal.TerminalBus.RunFocSqlServerAction(
             "Get-ClusterHealthStatus", DbHost, "Cluster-Health");
+    }
+
+    // --- Recovery-Mode-Dropdown (Phase 3.4, MSSQL-only) ---
+
+    private void SyncRecoveryModeFromStats(string? recoveryFromServer)
+    {
+        string normalized = recoveryFromServer?.ToUpperInvariant() ?? "FULL";
+        if (!RecoveryModeOptions.Contains(normalized))
+            normalized = "FULL";
+
+        _settingRecoveryModeInternally = true;
+        try
+        {
+            RecoveryModeSelected = normalized;
+            _lastSyncedRecoveryMode = normalized;
+            RecoveryModeVisible = true;
+        }
+        finally
+        {
+            _settingRecoveryModeInternally = false;
+        }
+    }
+
+    partial void OnRecoveryModeSelectedChanged(string value)
+    {
+        if (_settingRecoveryModeInternally) return;
+        if (string.Equals(value, _lastSyncedRecoveryMode, StringComparison.OrdinalIgnoreCase)) return;
+
+        _ = OnRecoveryModeChangedByUserAsync(value);
+    }
+
+    private async Task OnRecoveryModeChangedByUserAsync(string newMode)
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        Window? owner = GetMainWindow();
+        if (owner is null) return;
+
+        string warning = string.Equals(newMode, "SIMPLE", StringComparison.OrdinalIgnoreCase)
+            ? "\n\nAchtung: Wechsel zu SIMPLE bricht die Log-Chain — Point-in-Time-Restore ist "
+              + "ab diesem Zeitpunkt erst nach dem naechsten Voll-Backup wieder moeglich."
+            : string.Empty;
+
+        ConfirmWindow dlg = new()
+        {
+            WindowTitle = "Recovery-Modus aendern?",
+            Message = $"Der Recovery-Modus der Datenbank „{db.Database.Name}\" wird von "
+                    + $"{_lastSyncedRecoveryMode} auf {newMode} gesetzt.{warning}\n\nFortfahren?",
+            ConfirmText = newMode,
+            CancelText = "Abbrechen",
+        };
+
+        bool ok = await dlg.ShowDialog<bool>(owner);
+        if (!ok)
+        {
+            // User hat abgelehnt — Dropdown auf den zuletzt synchronisierten
+            // Server-Stand zurueckdrehen, ohne erneut den Change-Pfad zu triggern.
+            _settingRecoveryModeInternally = true;
+            try { RecoveryModeSelected = _lastSyncedRecoveryMode; }
+            finally { _settingRecoveryModeInternally = false; }
+            return;
+        }
+
+        RunSimpleAction("Set-DbRecoveryMode", db, $"-Recovery {newMode}", $"Recovery -> {newMode}");
+        // Optimistisches Update — der naechste DB-Select holt den echten Stand neu.
+        _lastSyncedRecoveryMode = newMode;
     }
 
     // --- Wartung (Phase 3.2, MSSQL-only via Invoke-DbMaintenance) ---

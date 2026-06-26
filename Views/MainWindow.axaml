@@ -127,7 +127,17 @@
                                 <TextBlock Grid.Row="2" Grid.Column="0" Classes="infoLabel" Text="Größe" Margin="0,4,0,0" />
                                 <TextBlock Grid.Row="2" Grid.Column="1" Classes="infoValue" Text="{Binding DbSize}" Margin="0,4,0,0" />
                                 <TextBlock Grid.Row="3" Grid.Column="0" Classes="infoLabel" Text="{Binding RecoveryLabel}" Margin="0,4,0,0" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="infoValue" Text="{Binding RecoveryOrArchiveMode}" Margin="0,4,0,0" />
+                                <!-- Read-only TextBlock fuer Oracle (oder solange RecoveryModeVisible=false) -->
+                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="infoValue"
+                                           Text="{Binding RecoveryOrArchiveMode}" Margin="0,4,0,0"
+                                           IsVisible="{Binding !RecoveryModeVisible}" />
+                                <!-- Dropdown fuer MSSQL: Recovery-Mode FULL/SIMPLE/BULK_LOGGED setzen -->
+                                <ComboBox Grid.Row="3" Grid.Column="1"
+                                          ItemsSource="{Binding RecoveryModeOptions}"
+                                          SelectedItem="{Binding RecoveryModeSelected, Mode=TwoWay}"
+                                          IsVisible="{Binding RecoveryModeVisible}"
+                                          MinWidth="140" Padding="8,2" Margin="0,4,0,0"
+                                          ToolTip.Tip="Recovery-Modus aendern (Set-DbRecoveryMode). Wechsel zu SIMPLE bricht die Log-Chain!" />
                             </Grid>
                         </StackPanel>
 
