@@ -48,6 +48,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     // Bei Oracle-Selection blenden wir den Button ganz aus.
     [ObservableProperty] private bool _clusterHealthVisible;
 
+    // Backup-Browser ist in v1 MSSQL-only — Oracle-Tab blendet die ganze
+    // Gruppe aus, bis ein RMAN-Wrapper kommt.
+    [ObservableProperty] private bool _backupBrowserVisible;
+
     private List<Session> _currentSessions = new();
 
     // Initial-Setup der pwsh-Session:
@@ -85,6 +89,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ArchiveLogOnEnabled = false;
         ArchiveLogOffEnabled = false;
         ClusterHealthVisible = false;
+        BackupBrowserVisible = false;
 
         switch (value)
         {
@@ -131,6 +136,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             ArchiveLogOnEnabled  = !recoveryOn;
             ArchiveLogOffEnabled =  recoveryOn;
             ClusterHealthVisible = true;
+            BackupBrowserVisible = true;
             BackupButtonText = "Backup";
             DbName = m.Name ?? "—";
             DbHost = m.Server ?? "—";
@@ -333,6 +339,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ArchiveLogOnEnabled = false;
         ArchiveLogOffEnabled = false;
         ClusterHealthVisible = false;
+        BackupBrowserVisible = false;
         StatusBar = "Verbindungen aktualisiert.";
         _logger.Debug("Verbindungen neu geladen: {0} Server.", newServers.Count);
     }
@@ -345,6 +352,27 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(DbHost) || DbHost == "—") return;
         DTM.Data.Terminal.TerminalBus.RunFocSqlServerAction(
             "Get-ClusterHealthStatus", DbHost, "Cluster-Health");
+    }
+
+    // Backup-Browser: Dialog mit allen .bak-Dateien der selektierten MSSQL-DB,
+    // mit Restore-Knopf (WITH REPLACE). MSSQL-only in v1.
+    [RelayCommand]
+    private async Task OpenBackupBrowser()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        if (db.ServerTyp != DB_SERVER.ServerTyp.MSSQL) return;
+
+        Window? owner = GetMainWindow();
+        if (owner is null || _services is null) return;
+
+        BackupBrowserViewModel vm =
+            _services.GetRequiredService<BackupBrowserViewModel>();
+        BackupBrowserWindow dlg = new() { DataContext = vm };
+
+        // Spinner ist sofort sichtbar, Daten laden parallel.
+        _ = vm.LoadAsync(ModuleDatabaseId(db));
+
+        await dlg.ShowDialog(owner);
     }
 
     [RelayCommand]

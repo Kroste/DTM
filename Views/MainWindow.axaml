@@ -203,6 +203,20 @@
                             </StackPanel>
                         </StackPanel>
 
+                        <!-- Gruppe: Backups (MSSQL-only) -->
+                        <StackPanel IsVisible="{Binding BackupBrowserVisible}">
+                            <TextBlock Classes="groupLabel" Text="BACKUPS" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="action" Command="{Binding OpenBackupBrowserCommand}"
+                                        ToolTip.Tip="Vorhandene .bak-Dateien anzeigen und Restore ausfuehren">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x1F4C2;" />
+                                        <TextBlock Text="Browser" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
                         <!-- Gruppe: Archive-Log -->
                         <StackPanel>
                             <TextBlock Classes="groupLabel" Text="ARCHIVE-LOG" />

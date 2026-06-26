@@ -45,6 +45,7 @@ internal static class ServiceRegistrations
         // Strukturierte FOC-SQL-Aufrufe ueber eigenen PS-Runspace (komplementaer
         // zum TerminalBus, der Text in den pwsh-Tab schreibt).
         services.AddSingleton<OracleRestoreService>();
+        services.AddSingleton<BackupBrowserService>();
 
         // --- ViewModels (Transient — neue Instanz pro Aufloesung) ---
         // MainWindowViewModel braucht den IServiceProvider, um untergeordnete
@@ -59,6 +60,7 @@ internal static class ServiceRegistrations
         services.AddTransient<SessionsViewModel>();
         services.AddTransient<TimePickerViewModel>();
         services.AddTransient<OracleRestoreSelectViewModel>();
+        services.AddTransient<BackupBrowserViewModel>();
 
         return services;
     }
