@@ -8,6 +8,8 @@ PowerShell-Session auf.
 
 Entwickelt von **Lars Oste** · Landeshauptstadt Potsdam · Fachbereich 54.2
 
+![DTM Hauptfenster](docs/screenshot-main.png)
+
 ---
 
 ## Voraussetzungen
@@ -51,6 +53,8 @@ Entwickelt von **Lars Oste** · Landeshauptstadt Potsdam · Fachbereich 54.2
 
 Das ⚙-Symbol neben der „Datenbanken"-Überschrift öffnet den Dialog
 **Verbindungen verwalten**.
+
+![Verbindungen verwalten](docs/screenshot-connections.png)
 
 | Feld | Bedeutung |
 |------|-----------|
@@ -122,23 +126,36 @@ entpackt werden; `version.txt` wird während des Builds aus dem Tag erzeugt.
 
 | Button | Modulfunktion | Zeitplanung | Interaktiv |
 |--------|---------------|-------------|------------|
-| Backup           | `Backup-Database`       | ja  | – |
-| Clone            | `Sync-Database-ToTest`  | ja  | – |
-| DB → Samba       | `Copy-Database-ToSamba` | –   | – |
-| Snapshot         | `Set-Snapshot`          | ja  | – |
-| Restore          | `Restore-Snapshot`      | –   | ja (Auswahl + Bestätigung) |
-| Remove           | `Remove-Snapshot`       | –   | ja |
-| ArchiveLog An    | `Set-Archive-Log`       | –   | – |
-| ArchiveLog Aus   | `Set-Archive-Log -Off`  | –   | – |
+| Backup           | `Backup-Database`         | ja  | – |
+| Clone            | `Sync-Database-ToTest`    | ja  | – |
+| DB → Samba       | `Copy-Database-ToSamba`   | –   | – |
+| Snapshot         | `Set-Snapshot`            | ja  | – |
+| Restore          | `Restore-Snapshot`        | –   | Oracle: Vorab-Dialog mit Restore-Points + PDB-Liste; MSSQL: pwsh-Prompt |
+| Remove           | `Remove-Snapshot`         | –   | ja |
+| ArchiveLog An    | `Set-Archive-Log`         | –   | – |
+| ArchiveLog Aus   | `Set-Archive-Log -Off`    | –   | – |
+| Cluster-Health   | `Get-ClusterHealthStatus` | –   | – (MSSQL-only, read-only Status im Info-Card) |
 
 Zeitplanung: Im Zeit-Dialog „Sofort" oder „Geplant" (Datum/Uhrzeit) wählen.
 Interaktive Aktionen (Restore/Remove) zeigen Prompts im pwsh-Tab;
 Antworten (Nummer, `ja`/`j`) in die Befehlszeile tippen.
 
-**ArchiveLog-Buttons** sind nur bei Oracle-Datenbanken aktiv und spiegeln den
-aktuellen Modus: ist `ARCHIVELOG` aktiv, ist „Log An" deaktiviert und
-„Log Aus" klickbar — und umgekehrt. Nach einem Klick aktualisieren sich
-die Stats automatisch nach ca. 8 Sekunden.
+**ArchiveLog-Buttons** togglen je nach DB-Typ unterschiedlich:
+- **Oracle**: echter `ARCHIVELOG ON/OFF`.
+- **MSSQL**: `Recovery FULL/SIMPLE` (`Set-Archive-Log` dispatched im Modul nach
+  DB-Typ — siehe `CLAUDE.md` „Akzeptierte Abweichungen").
+
+Die Buttons spiegeln den aktuellen Modus: ist „ON"/`FULL` aktiv, ist „Log An"
+deaktiviert und „Log Aus" klickbar — und umgekehrt. Nach einem Klick
+aktualisieren sich die Stats automatisch nach ca. 8 Sekunden.
+
+**Oracle-Restore-Vorschau:** Bei Oracle öffnet sich vor `Restore-Snapshot` ein
+Dialog mit den verfügbaren Restore Points und der PDB-Liste der CDB. Bei
+Multi-PDB-Konfiguration wird prominent gewarnt — `Restore-Snapshot` fährt die
+gesamte CDB herunter und setzt sie auf den gewählten Restore Point zurück
+(alle PDBs sind betroffen, nicht nur die ausgewählte).
+
+![Oracle Restore-Vorschau](docs/screenshot-oracle-restore.png)
 
 ---
 

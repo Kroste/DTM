@@ -385,7 +385,13 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       `workflow_dispatch`-Trigger für Build-Tests ohne Tag, `release`-Job
       conditional auf Tag-Push. Manual dispatch hat alle 4 Build-Jobs grün
       laufen lassen.)_
-- [ ] **4.6** `README.md` um Screenshot ergänzen. — `S`
+- [x] **4.6** `README.md` um Screenshot ergänzen. — `S`
+      _(erledigt: dieser Commit; drei Image-Slots im `docs/`-Ordner
+      (`screenshot-main.png`, `screenshot-connections.png`,
+      `screenshot-oracle-restore.png`), `docs/.gitkeep` hält das Verzeichnis
+      auch ohne Bilder im Repo. Bilder werden separat von Lars eingelegt.
+      Bonus: Aktionen-Tabelle um Cluster-Health-Zeile und Oracle-Restore-
+      Vorschau-Absatz erweitert, „Log An/Aus"-Doppelnutzung präzisiert.)_
 
 #### Phase 5 — Optional / Niedrige Priorität
 
