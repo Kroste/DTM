@@ -336,16 +336,33 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 #### Phase 2 — Sessions & Backup-Workflow
 
-- [ ] **2.1** 📦 FOC-SQL erweitern: `Close-DbSessions` als Wrapper
-      (MSSQL: `Database-Close-Connections`; Oracle: `ALTER SYSTEM KILL SESSION`
-      per SSH). — `M`
-- [ ] **2.2** 🔁 Kill-Session-Button im `SessionsWindow` (per Row + „Alle beenden"),
-      mit Bestätigung. Nutzt `Close-DbSessions`. — `M` 🛡
-- [ ] **2.3** 📦 FOC-SQL erweitern: `Get-DbBackups` + `Invoke-DbRestore`
-      (MSSQL: `Get-All-Backups`/`Database-Backup-Restore`; Oracle: passendes
-      RMAN-Listing — optional, in v1 evtl. nur MSSQL). — `L`
-- [ ] **2.4** 🔁 Backup-Browser in DTM — neuer Tab oder Dialog mit DataGrid
-      (Datei, Datum, Größe) + Restore-Knopf. Pre-Check Sessions schließen via 2.1. — `L` 🛡
+- [x] **2.1** 📦 FOC-SQL erweitern: `Close-DbSessions` als Dispatch-Wrapper
+      (MSSQL: PSSession → `Database-Close-Connections`; Oracle: SSH +
+      PL/SQL-Schleife mit `ALTER SYSTEM KILL SESSION ... IMMEDIATE` über
+      `v$session`, nur USER-Sessions). — `M`
+      _(erledigt: FOC-SQL `fddb124`, Submodul-Pointer DTM `2658dcf`. Aktivierung
+      nach Samba-Rollout.)_
+- [x] **2.2** 🔁 „Alle Sessions beenden"-Button im `SessionsWindow` mit
+      doppelter Bestätigung (neuer reusable `ConfirmWindow`-Dialog). Granularität
+      „alle" statt „pro Row" — bewusst entschieden, vereinfacht die UI und reicht
+      für den primären Use-Case (Pre-Check vor Backup-Restore). — `M` 🛡
+      _(erledigt: DTM `bd66845`; SessionsViewModel mit
+      `Configure(focDbId, displayName)`, Footer mit DB-Anzeige + Danger-Button,
+      ConfirmWindow als reusable Dialog für künftige destruktive Aktionen.)_
+- [x] **2.3** 📦 FOC-SQL erweitern: `Get-DbBackups` + `Invoke-DbRestore`
+      (MSSQL: `Get-ChildItem` im Backup-Verzeichnis + `Database-Backup-Restore`;
+      Oracle: in v1 nicht unterstützt — RMAN-Workflow kommt später). — `L`
+      _(erledigt: FOC-SQL `0971904`, Submodul-Pointer DTM `c1c20d8`. Beide
+      Wrapper liefern bei Oracle-Eingabe eine klare Fehlermeldung.)_
+- [x] **2.4** 🔁 Backup-Browser als neue Action-Gruppe „BACKUPS" im
+      MainWindow + Dialog mit DataGrid (Datei/Datum/Größe) + Restore-Knopf.
+      MSSQL-only (Action-Gruppe via `BackupBrowserVisible` bei Oracle
+      ausgeblendet). — `L` 🛡
+      _(erledigt: DTM `6a14c08`; `BackupBrowserService` im eigenen In-Process-PS-
+      Runspace (analog zu `OracleRestoreService`), Restore-Aufruf läuft über den
+      TerminalBus im sichtbaren pwsh-Tab. Sessions-schließen passiert implizit
+      in `Database-Backup-Restore` vor dem RESTORE. Restore-Confirm zeigt
+      Backup-Details + Warnung.)_
 
 #### Phase 3 — Wartungs-Tooling
 
