@@ -481,25 +481,34 @@ Sub-Items:
 - [ ] **6.1** `ServerIdentity`-Record `(ServerTyp, string Server)` mit `Equals`/
       `GetHashCode`; `DB_SERVER` bekommt Identity-Property. Schema kompatibel
       zu vorhandenem `ConnectionEntry`. — `S`
-- [ ] **6.2** `Composition/ServiceRegistrations` + `App.axaml.cs`: aus
-      `Dictionary<ServerTyp, DB_SERVER>` wird `IReadOnlyList<DB_SERVER>` (oder
-      `Dictionary<ServerIdentity, DB_SERVER>` für O(1)-Lookup). — `S`
-- [ ] **6.3** `IDTM_DATA`/`DTM_DATA`: Methoden nehmen `ServerIdentity` (oder
-      `DB_SERVER`) statt `ServerTyp`. Alle Aufrufstellen anpassen. — `M`
-- [ ] **6.4** Tree: neue `ServerGroupNodeViewModel` als Top-Level-Knoten pro
-      Typ; bestehende `ServerNodeViewModel` zeigt jetzt Hostname statt
-      Typ-Enum und ist Children einer Gruppe; `DatabaseNodeViewModel`
-      bekommt expliziten Server-Kontext (statt nur `ServerTyp`). — `M`
-- [ ] **6.5** `MainWindowViewModel`: `RootNodes` baut Gruppen aus der
-      Server-Liste; `OnSelectedNodeChanged` muss drei Typen handhaben
-      (Gruppe → no-op/expand, Server → DB-Liste, DB → Stats). — `M`
-- [ ] **6.6** `TerminalBus`: alle `RunFocSqlAction`/`RunFocSqlSimple`/
-      `RunFocSqlServerAction`-Signaturen um optionalen `string? server`
-      erweitern; bei nicht-null `-Server '<host>'` ans Cmdlet anhängen. — `M`
-- [ ] **6.7** Alle Wrapper-Aufrufe im `MainWindowViewModel` füllen den
-      neuen Server-Parameter aus dem `SelectedNode.ServerHostname`. — `S`
-- [ ] **6.8** Tests anpassen (`MainWindowViewModelTests`, `DTM_DATA`-Routing,
-      neue Tree-Konstruktion); README + CLAUDE.md aktualisieren. — `M`
+- [x] **6.2** `Composition/ServiceRegistrations` + `App.axaml.cs`: aus
+      `Dictionary<ServerTyp, DB_SERVER>` wird `IReadOnlyList<DB_SERVER>`. — `S`
+      _(erledigt in Refactor-Commit `3c3f936`)_
+- [x] **6.3** `IDTM_DATA`/`DTM_DATA`: Methoden nehmen `ServerIdentity` statt
+      `ServerTyp`. Interner `Dictionary<ServerIdentity, DB_SERVER>`-Lookup für
+      O(1); `KeyNotFoundException` mit klarer Meldung bei unbekannter
+      Identität. — `M` _(erledigt in `3c3f936`)_
+- [x] **6.4** Tree: neue `ServerGroupNodeViewModel` als statischer Top-Level-
+      Container pro Typ; bestehende `ServerNodeViewModel` zeigt Hostname statt
+      Typ-Enum; `DatabaseNodeViewModel` bekommt expliziten `ServerIdentity`-
+      Kontext (alter Konstruktor mit nur `ServerTyp` bleibt als Test-Convenience).
+      — `M` _(erledigt in `3c3f936`)_
+- [x] **6.5** `MainWindowViewModel`: `BuildRootNodes()` baut Gruppen aus der
+      Server-Liste (alphabetisch sortiert pro Gruppe); `OnSelectedNodeChanged`
+      handhabt drei Typen (Gruppe → no-op, Server → DB-Liste, DB → Stats);
+      `LoadStatsAsync` nutzt `db.ServerIdentity`. — `M` _(erledigt in `3c3f936`)_
+- [x] **6.6** `TerminalBus.RunFocSqlAction`/`RunFocSqlSimple` haben optionalen
+      `string? server`-Parameter; bei nicht-null wird `-Server '<host>'` ans
+      Cmdlet angehängt. `RunFocSqlServerAction` war schon ok. — `M`
+      _(erledigt in `3c3f936`)_
+- [x] **6.7** `ServerParamFor(db)` liefert bei MSSQL den Hostname, bei Oracle
+      `null` (Oracle adressiert via FQDN im `-Database`). `RunDbActionAsync`,
+      `RunSimpleAction` und der `BackupBrowserViewModel`/`-Service` reichen den
+      Wert durch. — `S` _(erledigt in `3c3f936`)_
+- [x] **6.8** Tests (`DtmDataTests` komplett auf List/ServerIdentity, neuer
+      „Multiple servers same type"-Test, `MainWindowViewModelTests.StubData`
+      implementiert neues Interface). 278/278 grün. CLAUDE.md mit
+      Sub-Item-Häkchen versehen (dieser Commit). — `M`
 - [ ] **6.9** Release `v2.0.0` (Breaking-Change-Major-Bump wegen
       Datenmodell und FOC-SQL-Aufruf-Pattern). — `S`
 
