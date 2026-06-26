@@ -365,10 +365,16 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       als Option im Remove-Snapshot-Dialog. — `S` 📦 (optional)
 - [ ] **4.2** `AboutWindow` ergänzen: GitHub-Link auf `https://github.com/Kroste/DTM`
       + „Buy me a coffee"-Button (`buymeacoffee.com`). — `S`
-- [ ] **4.3** `.vscode/tasks.json` ergänzen: Hard-Clean-Task (rekursives Löschen
+- [x] **4.3** `.vscode/tasks.json` ergänzen: Hard-Clean-Task (rekursives Löschen
       `bin/`/`obj/`) + Task „Aktuelles Logfile öffnen" (`logs/info.log`/`error.log`). — `S`
-- [ ] **4.4** **MinVer** einbinden; manuelle `<Version>`/`<AssemblyVersion>` aus
+      _(erledigt: `90fe0ba`; drei cross-platform Tasks „hard clean (bin + obj)",
+      „Logfile info oeffnen", „Logfile error oeffnen" via `linux`/`osx`/`windows`-
+      Branches.)_
+- [x] **4.4** **MinVer** einbinden; manuelle `<Version>`/`<AssemblyVersion>` aus
       `DTM.csproj` entfernen. Tag-Schema `vX.Y.Z` ist schon vorhanden. — `S`
+      _(erledigt: dieser Commit; MinVer 7.0.0 mit `MinVerTagPrefix=v`; ab jetzt
+      kommt die Version aus dem juengsten Git-Tag. Zwischen Tags gibt's
+      pre-release-Versionen wie `1.1.1-alpha.0.2+<sha>`.)_
 - [ ] **4.5** `.github/workflows/release.yml` um AppImage-Job erweitern
       (Node 24 ist bereits gesetzt). — `M`
 - [ ] **4.6** `README.md` um Screenshot ergänzen. — `S`
