@@ -75,6 +75,68 @@
                 "reveal": "always"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            // Loescht bin/ und obj/ in DTM und DTM.Tests rekursiv.
+            // Cross-Platform: rm auf Linux/macOS, Remove-Item via PowerShell auf Windows.
+            "label": "hard clean (bin + obj)",
+            "type": "shell",
+            "linux": {
+                "command": "rm -rf bin obj DTM.Tests/bin DTM.Tests/obj"
+            },
+            "osx": {
+                "command": "rm -rf bin obj DTM.Tests/bin DTM.Tests/obj"
+            },
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-Command",
+                    "Remove-Item -Recurse -Force bin,obj,DTM.Tests\\bin,DTM.Tests\\obj -ErrorAction SilentlyContinue"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
+            // Oeffnet das aktuelle Info-Logfile mit dem Default-Programm.
+            // Pfad orientiert sich am NLog-${basedir}/logs unter bin/Debug/net10.0.
+            "label": "Logfile info oeffnen",
+            "type": "shell",
+            "linux": {
+                "command": "xdg-open bin/Debug/net10.0/logs/info.log"
+            },
+            "osx": {
+                "command": "open bin/Debug/net10.0/logs/info.log"
+            },
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-Command",
+                    "Start-Process bin\\Debug\\net10.0\\logs\\info.log"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
+            // Oeffnet das aktuelle Error-Logfile mit dem Default-Programm.
+            "label": "Logfile error oeffnen",
+            "type": "shell",
+            "linux": {
+                "command": "xdg-open bin/Debug/net10.0/logs/error.log"
+            },
+            "osx": {
+                "command": "open bin/Debug/net10.0/logs/error.log"
+            },
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-Command",
+                    "Start-Process bin\\Debug\\net10.0\\logs\\error.log"
+                ]
+            },
+            "problemMatcher": []
         }
     ]
 }
