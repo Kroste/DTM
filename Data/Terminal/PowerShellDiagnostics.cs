@@ -15,19 +15,27 @@ internal static class PowerShellDiagnostics
     public static void ThrowIfErrors(PowerShell ps, string stage)
     {
         if (!ps.HadErrors) return;
+        throw new InvalidOperationException(FormatDiagnostics(ps, stage));
+    }
 
+    /// <summary>
+    /// Formatiert den aktuellen Stream-Stand zu einer Diagnose-Nachricht.
+    /// Trennt Errors, Warnungen und Information-Stream-Eintraege.
+    /// </summary>
+    public static string FormatDiagnostics(PowerShell ps, string stage)
+    {
         StringBuilder sb = new();
-        sb.Append(stage).Append(" fehlgeschlagen");
+        sb.Append(stage);
 
         if (ps.Streams.Error.Count > 0)
         {
-            sb.Append(':');
+            sb.Append(" — Fehler:");
             foreach (ErrorRecord err in ps.Streams.Error)
                 AppendErrorRecord(sb, err);
         }
         else
         {
-            sb.Append(" (HadErrors=true, aber Streams.Error leer — siehe Warnungen unten)");
+            sb.Append(" (Streams.Error leer)");
         }
 
         if (ps.Streams.Warning.Count > 0)
@@ -48,7 +56,30 @@ internal static class PowerShellDiagnostics
                 sb.Append("\n  - ").Append(ps.Streams.Information[i].MessageData?.ToString() ?? "");
         }
 
-        throw new InvalidOperationException(sb.ToString());
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Prueft, ob ein Cmdlet im aktuellen Runspace bekannt ist. Macht eine
+    /// kurze Get-Command-Abfrage. State des PowerShell-Objekts (Commands/Streams)
+    /// wird vorher gesichert und nachher wiederhergestellt — bzw. die
+    /// Streams werden geleert.
+    /// </summary>
+    public static bool CommandExists(PowerShell ps, string commandName)
+    {
+        ps.Commands.Clear();
+        ps.Streams.Error.Clear();
+
+        ps.AddCommand("Get-Command")
+          .AddParameter("Name", commandName)
+          .AddParameter("ErrorAction", "SilentlyContinue");
+
+        var result = ps.Invoke();
+
+        ps.Commands.Clear();
+        ps.Streams.Error.Clear();
+
+        return result.Count > 0 && result[0] is not null;
     }
 
     private static void AppendErrorRecord(StringBuilder sb, ErrorRecord err)

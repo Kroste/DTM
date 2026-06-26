@@ -34,10 +34,30 @@ public sealed class BackupBrowserService
             using PowerShell ps = PowerShell.Create();
 
             ps.AddScript(FocSqlRuntime.BuildImportSnippet()).Invoke();
-            PowerShellDiagnostics.ThrowIfErrors(ps, "FOC-SQL Modul-Import");
+
+            // Wichtig: Streams.Error nach dem Import kann nicht-fatale Fehler
+            // enthalten (z.B. Copy-Item schlaegt fehl wegen Datei-Lock vom
+            // parallelen pwsh-Tab — Modul ist trotzdem ueber den PSModulePath
+            // erreichbar). Daher hier NICHT direkt werfen, sondern pruefen ob
+            // das Cmdlet wirklich verfuegbar ist.
+            string importDiag = PowerShellDiagnostics.FormatDiagnostics(ps, "FOC-SQL Modul-Import");
+            ps.Streams.ClearStreams();
+
+            if (!PowerShellDiagnostics.CommandExists(ps, "Get-DbBackups"))
+            {
+                throw new InvalidOperationException(
+                    "FOC-SQL Modul ist nicht geladen oder Get-DbBackups fehlt — pruefe "
+                    + "ModulePath/SambaSource in den Einstellungen und stelle sicher, dass "
+                    + "das aktuelle FOC-SQL-Modul (mit Get-DbBackups) auf der Samba-Quelle "
+                    + "liegt.\n\nDiagnose des Import-Versuchs:\n" + importDiag);
+            }
+
+            if (ps.HadErrors)
+                _logger.Warn("FOC-SQL Modul-Import hatte nicht-fatale Fehler (Cmdlet trotzdem verfuegbar): {0}", importDiag);
 
             ct.ThrowIfCancellationRequested();
             ps.Commands.Clear();
+            ps.Streams.ClearStreams();
 
             ps.AddCommand("Get-DbBackups")
               .AddParameter("Database", database);

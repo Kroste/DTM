@@ -34,10 +34,27 @@ public sealed class OracleRestoreService
             // Samba-Copy/Encoding-Fix/Import in einem Rutsch ab. Erster Aufruf
             // ist teuer (~5 s), Folgeaufrufe schneller (Module ist im PSModulePath).
             ps.AddScript(FocSqlRuntime.BuildImportSnippet()).Invoke();
-            PowerShellDiagnostics.ThrowIfErrors(ps, "FOC-SQL Modul-Import");
+
+            // Streams.Error nach dem Import kann nicht-fatale Fehler enthalten
+            // (Datei-Lock vom parallelen pwsh-Tab) — pruefen ob das Cmdlet
+            // verfuegbar ist statt direkt zu werfen.
+            string importDiag = PowerShellDiagnostics.FormatDiagnostics(ps, "FOC-SQL Modul-Import");
+            ps.Streams.ClearStreams();
+
+            if (!PowerShellDiagnostics.CommandExists(ps, "Get-OracleRestoreInfo"))
+            {
+                throw new InvalidOperationException(
+                    "FOC-SQL Modul ist nicht geladen oder Get-OracleRestoreInfo fehlt — pruefe "
+                    + "ModulePath/SambaSource in den Einstellungen.\n\nDiagnose des Import-Versuchs:\n"
+                    + importDiag);
+            }
+
+            if (ps.HadErrors)
+                _logger.Warn("FOC-SQL Modul-Import hatte nicht-fatale Fehler (Cmdlet trotzdem verfuegbar): {0}", importDiag);
 
             ct.ThrowIfCancellationRequested();
             ps.Commands.Clear();
+            ps.Streams.ClearStreams();
 
             ps.AddCommand("Get-OracleRestoreInfo")
               .AddParameter("Database", database);
