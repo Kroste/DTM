@@ -1,0 +1,6 @@
+#!/bin/bash
+# AppImage-Eintrittspunkt: setzt LD_LIBRARY_PATH auf den mitgelieferten
+# self-contained Runtime-Ordner und startet DTM.
+HERE="$(dirname "$(readlink -f "${0}")")"
+export LD_LIBRARY_PATH="${HERE}/usr/bin:${LD_LIBRARY_PATH}"
+exec "${HERE}/usr/bin/DTM" "$@"

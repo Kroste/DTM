@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=DTM
+GenericName=Datenbank-Manager
+Comment=MSSQL/Oracle Datenbank-Administration via FOC-SQL
+Exec=DTM
+Icon=dtm
+Terminal=false
+Categories=Development;Database;

@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v[0-9]*'
+  # Manuell triggerbar (z.B. um den AppImage-Build zu pruefen, ohne ein
+  # echtes Release zu schneiden). Der release-Job ist tag-only, baut bei
+  # manuellem Dispatch also nicht hoch.
+  workflow_dispatch:
 
 jobs:
 
@@ -24,6 +28,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # MinVer braucht die volle Git-History fuer Tag-Aufloesung
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
@@ -33,6 +39,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}" -replace '^v', ''
+          if (-not $version -or $version -notmatch '^[0-9]') { $version = 'dev' }
           $version | Set-Content ./publish/version.txt -NoNewline
       - uses: actions/upload-artifact@v6
         with:
@@ -46,23 +53,97 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # MinVer braucht die volle Git-History fuer Tag-Aufloesung
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.x'
       - name: Publish linux-x64
         run: dotnet publish DTM.csproj -c Release -r linux-x64 --self-contained true -o ./publish
       - name: version.txt erstellen
-        run: echo -n "${GITHUB_REF_NAME#v}" > ./publish/version.txt
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          case "$v" in [0-9]*) ;; *) v=dev ;; esac
+          echo -n "$v" > ./publish/version.txt
       - uses: actions/upload-artifact@v6
         with:
           name: DTM-linux
           path: ./publish
           retention-days: 1
 
+  build-appimage:
+    name: Build AppImage (linux-x64)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.x'
+
+      - name: Publish linux-x64
+        run: dotnet publish DTM.csproj -c Release -r linux-x64 --self-contained true -o ./publish
+
+      - name: AppDir-Struktur vorbereiten
+        run: |
+          set -e
+          # Version fuer interne Files
+          v="${GITHUB_REF_NAME#v}"
+          case "$v" in [0-9]*) ;; *) v=dev ;; esac
+          echo -n "$v" > ./publish/version.txt
+
+          # Verzeichnis-Skelett
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+          # App + Self-contained Runtime
+          cp -r publish/* AppDir/usr/bin/
+          chmod +x AppDir/usr/bin/DTM
+
+          # Icon auf 256x256 padden (Logo ist 272x145, AppImage will quadratisch)
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y imagemagick
+          convert Assets/lhp_logo.png \
+            -resize 256x256 \
+            -background none -gravity center -extent 256x256 \
+            AppDir/usr/share/icons/hicolor/256x256/apps/dtm.png
+
+          # Desktop-Entry + AppRun aus dem Repo uebernehmen
+          cp packaging/appimage/dtm.desktop AppDir/usr/share/applications/dtm.desktop
+          cp packaging/appimage/AppRun       AppDir/AppRun
+          chmod +x AppDir/AppRun
+
+          # Symlinks im Root (appimagetool erwartet sie dort)
+          cp AppDir/usr/share/applications/dtm.desktop AppDir/dtm.desktop
+          cp AppDir/usr/share/icons/hicolor/256x256/apps/dtm.png AppDir/dtm.png
+
+      - name: AppImage bauen
+        run: |
+          set -e
+          # FUSE-frei: Tool extrahieren und direkt aufrufen.
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ./appimagetool-x86_64.AppImage --appimage-extract >/dev/null
+          v="${GITHUB_REF_NAME#v}"
+          case "$v" in [0-9]*) ;; *) v=dev ;; esac
+          ARCH=x86_64 ./squashfs-root/AppRun AppDir "DTM-${v}-x86_64.AppImage"
+          ls -lh "DTM-${v}-x86_64.AppImage"
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: DTM-appimage
+          path: DTM-*-x86_64.AppImage
+          retention-days: 1
+
   release:
     name: GitHub Release erstellen
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-appimage]
     runs-on: ubuntu-latest
+    # Release nur bei tatsaechlichem Tag-Push, nicht beim manuellen Dispatch.
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
@@ -74,6 +155,10 @@ jobs:
         with:
           name: DTM-linux
           path: ./DTM-linux
+      - uses: actions/download-artifact@v7
+        with:
+          name: DTM-appimage
+          path: ./DTM-appimage
       - name: Archive erstellen
         run: |
           cd DTM-windows
@@ -81,6 +166,10 @@ jobs:
           cd ../DTM-linux
           tar -czf ../DTM-${{ github.ref_name }}-linux.tar.gz .
           cd ..
+          # AppImage liegt schon als fertige Datei vor, nur umbenennen falls
+          # noetig.
+          mv DTM-appimage/DTM-*-x86_64.AppImage \
+             ./DTM-${{ github.ref_name }}-x86_64.AppImage
       - name: GitHub Release anlegen
         env:
           GH_TOKEN: ${{ github.token }}
@@ -89,4 +178,5 @@ jobs:
             --repo "${{ github.repository }}" \
             --generate-notes \
             "DTM-${{ github.ref_name }}-windows.zip" \
-            "DTM-${{ github.ref_name }}-linux.tar.gz"
+            "DTM-${{ github.ref_name }}-linux.tar.gz" \
+            "DTM-${{ github.ref_name }}-x86_64.AppImage"
