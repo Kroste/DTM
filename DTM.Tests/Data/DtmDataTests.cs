@@ -31,7 +31,7 @@ public class DtmDataTests
         var factory = new FakeFactory();
         var servers = new Dictionary<DB_SERVER.ServerTyp, DB_SERVER>
         {
-            [typ] = new DB_SERVER(new ServerCredential("server", "user", "pass", "db", ""))
+            [typ] = new DB_SERVER(typ, new ServerCredential("server", "user", "pass", "db", ""))
         };
         return (new DTM_DATA(servers, factory), factory);
     }

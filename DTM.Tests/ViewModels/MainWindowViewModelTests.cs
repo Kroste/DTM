@@ -16,7 +16,7 @@ public class MainWindowViewModelTests
 
     private static MainWindowViewModel MakeVm(params DB_SERVER.ServerTyp[] types)
     {
-        var servers = types.ToDictionary(t => t, _ => new DB_SERVER(new ServerCredential()));
+        var servers = types.ToDictionary(t => t, t => new DB_SERVER(t, new ServerCredential()));
         return new MainWindowViewModel(new StubData(), servers);
     }
 

@@ -9,16 +9,30 @@ public class DbServerTests
     public void Constructor_StoresCredential()
     {
         var cred = new ServerCredential("srv");
-        new DB_SERVER(cred).serverCredential.Should().BeSameAs(cred);
+        new DB_SERVER(DB_SERVER.ServerTyp.MSSQL, cred).serverCredential.Should().BeSameAs(cred);
     }
 
     [Fact]
     public void ServerCredential_Property_ReturnsStoredValue()
     {
         var cred = new ServerCredential("sql01", "sa", "pass", "MyDB", "");
-        var server = new DB_SERVER(cred);
+        var server = new DB_SERVER(DB_SERVER.ServerTyp.MSSQL, cred);
         server.serverCredential!.Server.Should().Be("sql01");
         server.serverCredential.User.Should().Be("sa");
+    }
+
+    [Fact]
+    public void Constructor_StoresTyp()
+    {
+        var server = new DB_SERVER(DB_SERVER.ServerTyp.ORACLE, new ServerCredential("orahost"));
+        server.Typ.Should().Be(DB_SERVER.ServerTyp.ORACLE);
+    }
+
+    [Fact]
+    public void Identity_CombinesTypAndServerHostname()
+    {
+        var server = new DB_SERVER(DB_SERVER.ServerTyp.MSSQL, new ServerCredential("FOC-SQL01"));
+        server.Identity.Should().Be(new ServerIdentity(DB_SERVER.ServerTyp.MSSQL, "FOC-SQL01"));
     }
 
     [Fact]

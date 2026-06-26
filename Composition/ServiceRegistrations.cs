@@ -32,7 +32,7 @@ internal static class ServiceRegistrations
             foreach (ConnectionEntry entry in ConnectionStore.Load())
             {
                 if (Enum.TryParse<DB_SERVER.ServerTyp>(entry.Key, ignoreCase: true, out var typ))
-                    dict[typ] = new DB_SERVER(entry.ToCredential());
+                    dict[typ] = new DB_SERVER(typ, entry.ToCredential());
             }
             return dict;
         });
