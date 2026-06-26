@@ -451,6 +451,58 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       ablösen (Architektur-Refactor, beseitigt MSSQL-/Oracle-Logik-Duplikat
       zwischen `Data/MSSQL_ODBC.cs`/`ORACLE_ODBC.cs` und dem PS-Modul). — `L`
 
+#### Phase 6 — Multi-Server-Support (`L`, ein Breaking-Change-Block, **`v2.0.0`**)
+
+Heute reduziert die App die Connection-Liste auf ein
+`Dictionary<ServerTyp, DB_SERVER>` — pro Typ überlebt nur ein Server,
+die anderen verschwinden still beim Start. Mit mehreren MSSQL/Oracle/…-
+Hosts in einer Umgebung (z. B. `FOC-SQL01` + `DEVFOC-SQL01`,
+`olvm-mgm.lhp.intern` + `olvm-mgm.devlhp.intern` + `olv-mgm.dmz`) muss
+DTM das echte Multi-Server-Modell tragen.
+
+Entscheidungen:
+- **Tree:** zweistufig (Typ → Server → DB), 3 Ebenen.
+- **Identität persistiert:** `ConnectionEntry.Key` bleibt der Typ (kein
+  Schema-Bruch der `connections.json`); die Composite-Identität wird
+  zur Laufzeit aus `(Typ, Server)` gebildet.
+- **FOC-SQL-Aufrufe:** alle Wrapper bekommen den `-Server`-Parameter
+  explizit mitgegeben (kein Verlass mehr auf `$global:Server`-Default).
+- **Connection-Manager-UI:** unverändert — User legt einfach mehrere
+  Zeilen mit gleichem Typ + unterschiedlichen Hostnames an.
+- **Künftige DB-Typen** (MariaDB, MySQL, PostgreSQL, DB2, MongoDB) sind
+  hier nicht im Scope, aber das Tree-/Datenmodell wird so gehalten,
+  dass weitere `ServerTyp`-Werte mit eigener Backend-Strategie später
+  einfach addiert werden können. Das **Modul-Renaming** („FOC-SQL"
+  ist als Name irreführend, weil es Oracle mitmacht) ist eigener
+  späterer Punkt — nicht in Phase 6.
+
+Sub-Items:
+
+- [ ] **6.1** `ServerIdentity`-Record `(ServerTyp, string Server)` mit `Equals`/
+      `GetHashCode`; `DB_SERVER` bekommt Identity-Property. Schema kompatibel
+      zu vorhandenem `ConnectionEntry`. — `S`
+- [ ] **6.2** `Composition/ServiceRegistrations` + `App.axaml.cs`: aus
+      `Dictionary<ServerTyp, DB_SERVER>` wird `IReadOnlyList<DB_SERVER>` (oder
+      `Dictionary<ServerIdentity, DB_SERVER>` für O(1)-Lookup). — `S`
+- [ ] **6.3** `IDTM_DATA`/`DTM_DATA`: Methoden nehmen `ServerIdentity` (oder
+      `DB_SERVER`) statt `ServerTyp`. Alle Aufrufstellen anpassen. — `M`
+- [ ] **6.4** Tree: neue `ServerGroupNodeViewModel` als Top-Level-Knoten pro
+      Typ; bestehende `ServerNodeViewModel` zeigt jetzt Hostname statt
+      Typ-Enum und ist Children einer Gruppe; `DatabaseNodeViewModel`
+      bekommt expliziten Server-Kontext (statt nur `ServerTyp`). — `M`
+- [ ] **6.5** `MainWindowViewModel`: `RootNodes` baut Gruppen aus der
+      Server-Liste; `OnSelectedNodeChanged` muss drei Typen handhaben
+      (Gruppe → no-op/expand, Server → DB-Liste, DB → Stats). — `M`
+- [ ] **6.6** `TerminalBus`: alle `RunFocSqlAction`/`RunFocSqlSimple`/
+      `RunFocSqlServerAction`-Signaturen um optionalen `string? server`
+      erweitern; bei nicht-null `-Server '<host>'` ans Cmdlet anhängen. — `M`
+- [ ] **6.7** Alle Wrapper-Aufrufe im `MainWindowViewModel` füllen den
+      neuen Server-Parameter aus dem `SelectedNode.ServerHostname`. — `S`
+- [ ] **6.8** Tests anpassen (`MainWindowViewModelTests`, `DTM_DATA`-Routing,
+      neue Tree-Konstruktion); README + CLAUDE.md aktualisieren. — `M`
+- [ ] **6.9** Release `v2.0.0` (Breaking-Change-Major-Bump wegen
+      Datenmodell und FOC-SQL-Aufruf-Pattern). — `S`
+
 ---
 
 ## Definition of Done (Checkliste)
