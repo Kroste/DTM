@@ -355,6 +355,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
         SessionsViewModel vm = ResolveOrNew<SessionsViewModel>();
         vm.SetSessions(_currentSessions);
+        if (SelectedNode is DatabaseNodeViewModel db)
+            vm.Configure(ModuleDatabaseId(db), db.Database.Name);
         SessionsWindow dlg = new SessionsWindow { DataContext = vm };
         await dlg.ShowDialog(owner);
     }
