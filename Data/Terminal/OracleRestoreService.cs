@@ -34,7 +34,7 @@ public sealed class OracleRestoreService
             // Samba-Copy/Encoding-Fix/Import in einem Rutsch ab. Erster Aufruf
             // ist teuer (~5 s), Folgeaufrufe schneller (Module ist im PSModulePath).
             ps.AddScript(FocSqlRuntime.BuildImportSnippet()).Invoke();
-            ThrowIfErrors(ps, "FOC-SQL Modul-Import");
+            PowerShellDiagnostics.ThrowIfErrors(ps, "FOC-SQL Modul-Import");
 
             ct.ThrowIfCancellationRequested();
             ps.Commands.Clear();
@@ -43,7 +43,7 @@ public sealed class OracleRestoreService
               .AddParameter("Database", database);
 
             Collection<PSObject> results = ps.Invoke();
-            ThrowIfErrors(ps, $"Get-OracleRestoreInfo -Database '{database}'");
+            PowerShellDiagnostics.ThrowIfErrors(ps, $"Get-OracleRestoreInfo -Database '{database}'");
 
             if (results.Count == 0 || results[0] is null)
             {
@@ -60,14 +60,6 @@ public sealed class OracleRestoreService
 
             return new OracleRestoreInfo(pdbs, rps);
         }, ct);
-    }
-
-    private static void ThrowIfErrors(PowerShell ps, string stage)
-    {
-        if (!ps.HadErrors) return;
-        string errors = string.Join("; ", ps.Streams.Error
-            .Select(e => e.Exception?.Message ?? e.ToString()));
-        throw new InvalidOperationException($"{stage} fehlgeschlagen: {errors}");
     }
 
     private static List<OraclePdb> ExtractPdbs(object? raw)

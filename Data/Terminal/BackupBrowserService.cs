@@ -34,7 +34,7 @@ public sealed class BackupBrowserService
             using PowerShell ps = PowerShell.Create();
 
             ps.AddScript(FocSqlRuntime.BuildImportSnippet()).Invoke();
-            ThrowIfErrors(ps, "FOC-SQL Modul-Import");
+            PowerShellDiagnostics.ThrowIfErrors(ps, "FOC-SQL Modul-Import");
 
             ct.ThrowIfCancellationRequested();
             ps.Commands.Clear();
@@ -43,7 +43,7 @@ public sealed class BackupBrowserService
               .AddParameter("Database", database);
 
             Collection<PSObject> results = ps.Invoke();
-            ThrowIfErrors(ps, $"Get-DbBackups -Database '{database}'");
+            PowerShellDiagnostics.ThrowIfErrors(ps, $"Get-DbBackups -Database '{database}'");
 
             List<MssqlBackup> backups = new();
             foreach (PSObject? item in results)
@@ -59,14 +59,6 @@ public sealed class BackupBrowserService
             _logger.Info("Get-DbBackups({0}): {1} Backup-Datei(en)", database, backups.Count);
             return backups;
         }, ct);
-    }
-
-    private static void ThrowIfErrors(PowerShell ps, string stage)
-    {
-        if (!ps.HadErrors) return;
-        string errors = string.Join("; ", ps.Streams.Error
-            .Select(e => e.Exception?.Message ?? e.ToString()));
-        throw new InvalidOperationException($"{stage} fehlgeschlagen: {errors}");
     }
 
     private static string Prop(PSObject pso, string name) =>
