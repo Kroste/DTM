@@ -13,13 +13,30 @@ public static class UpdateService
     /// Liest die laufende Version aus AssemblyInformationalVersion (&lt;Version&gt; in der csproj),
     /// damit das Format mit der version.txt übereinstimmt (z. B. "1.0.4").
     /// AssemblyVersion hat ein anderes Schema (1.0.0.4) und darf hier NICHT verwendet werden.
+    ///
+    /// MinVer setzt bei Pre-Release-Builds (zwischen Tags) Suffixe wie
+    /// „2.0.1-alpha.0.5+sha". <see cref="Version.TryParse"/> akzeptiert solche
+    /// Suffixe nicht — daher wird vor dem Parse sowohl der Git-Hash (nach „+")
+    /// als auch der Pre-Release-Tag (nach „-") abgeschnitten.
     /// </summary>
     public static Version CurrentVersion()
     {
         var raw = Assembly.GetExecutingAssembly()
                           .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                           ?.InformationalVersion ?? "1.0.0";
-        return Version.TryParse(raw.Split('+')[0], out var v) ? v : new Version(1, 0, 0);
+        return ParseInformationalVersion(raw);
+    }
+
+    /// <summary>
+    /// Extrahiert die <see cref="Version"/> aus einem AssemblyInformationalVersion-
+    /// String. Schneidet Git-Hash (nach „+") und MinVer-Pre-Release-Suffix
+    /// (nach „-") ab, dann <see cref="Version.TryParse"/>. Fallback bei
+    /// nicht parsbaren Werten: <c>1.0.0</c>.
+    /// </summary>
+    internal static Version ParseInformationalVersion(string informationalVersion)
+    {
+        string clean = (informationalVersion ?? string.Empty).Split('+')[0].Split('-')[0];
+        return Version.TryParse(clean, out var v) ? v : new Version(1, 0, 0);
     }
 
     public static async Task<Version?> CheckForUpdateAsync(string updateSource)
