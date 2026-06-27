@@ -509,8 +509,10 @@ Sub-Items:
       „Multiple servers same type"-Test, `MainWindowViewModelTests.StubData`
       implementiert neues Interface). 278/278 grün. CLAUDE.md mit
       Sub-Item-Häkchen versehen (dieser Commit). — `M`
-- [ ] **6.9** Release `v2.0.0` (Breaking-Change-Major-Bump wegen
+- [x] **6.9** Release `v2.0.0` (Breaking-Change-Major-Bump wegen
       Datenmodell und FOC-SQL-Aufruf-Pattern). — `S`
+      _(erledigt; alle drei Bundles published — Windows-ZIP, Linux-tar.gz,
+      AppImage. Lars hat vor dem Tag verifiziert.)_
 
 ---
 
