@@ -1,6 +1,7 @@
 using DTM.Updater;
 using FluentAssertions;
 using Xunit;
+using SystemFile = System.IO.File;
 
 namespace DTM.Tests.Data;
 
@@ -33,5 +34,45 @@ public class UpdateServiceTests
     {
         var v = UpdateService.ParseInformationalVersion(input);
         v.Should().Be(new Version(1, 0, 0));
+    }
+
+    [Fact]
+    public async Task LoadReleaseNotesAsync_FiltersByRange_AndSortsDescending()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "dtm-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string json = """
+            [
+              { "version": "1.5.0", "date": "2026-01-01", "notes": ["A"], "modulesChanged": [] },
+              { "version": "2.0.0", "date": "2026-06-01", "notes": ["B"], "modulesChanged": ["FOC-SQL"] },
+              { "version": "2.1.0", "date": "2026-06-27", "notes": ["C"], "modulesChanged": ["MSSQL"] },
+              { "version": "2.2.0", "date": "2026-09-01", "notes": ["D"], "modulesChanged": [] }
+            ]
+            """;
+            await SystemFile.WriteAllTextAsync(Path.Combine(dir, "release-notes.json"), json);
+
+            var notes = await UpdateService.LoadReleaseNotesAsync(dir, new Version(1, 5, 0), new Version(2, 1, 0));
+
+            notes.Should().HaveCount(2);
+            notes[0].Version.Should().Be("2.1.0");
+            notes[1].Version.Should().Be("2.0.0");
+            notes[0].ModulesChanged.Should().Contain("MSSQL");
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task LoadReleaseNotesAsync_ReturnsEmpty_WhenFileMissing()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "dtm-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var notes = await UpdateService.LoadReleaseNotesAsync(dir, new Version(1, 0, 0), new Version(2, 0, 0));
+            notes.Should().BeEmpty();
+        }
+        finally { Directory.Delete(dir, true); }
     }
 }

@@ -1,12 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="using:DTM.Views"
+        xmlns:sys="using:System"
         x:Class="DTM.Views.UpdatePromptWindow"
         Title="Update verfügbar"
-        Width="440" Height="200"
-        MinWidth="420" MinHeight="180"
+        Width="560" Height="540"
+        MinWidth="500" MinHeight="380"
         WindowStartupLocation="CenterOwner">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- Titelleiste -->
         <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
@@ -23,14 +25,74 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Row="1" Margin="20" Spacing="16">
-            <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+        <ScrollViewer Grid.Row="1" Padding="20,16">
+            <StackPanel Spacing="14">
+                <TextBlock x:Name="MessageText" TextWrapping="Wrap" FontSize="14" />
+
+                <!-- Banner: MSSQL-Modul geaendert (manueller Server-Eingriff noetig). -->
+                <Border x:Name="MssqlBanner" IsVisible="False"
+                        Background="#3A1F1F" BorderBrush="#B33A3A" BorderThickness="1"
+                        CornerRadius="4" Padding="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="⚠ MSSQL-Modul wurde geändert"
+                                   FontWeight="SemiBold" Foreground="#FF8A8A" />
+                        <TextBlock TextWrapping="Wrap" Foreground="#E5D2D2" FontSize="12"
+                                   Text="Das MSSQL-Modul liegt auf jedem SQL-Server in einem User-Profil. Damit der Update wirksam wird, muss auf jedem Server einmalig eine PowerShell-Sitzung geöffnet werden — das Profil-Skript zieht das neue Modul dann automatisch nach. Bis dahin verweigert FOC-SQL die MSSQL-Aufrufe mit einer VERSION_MISMATCH-Meldung." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Banner: FOC-SQL geaendert (DTM zieht es automatisch). -->
+                <Border x:Name="FocSqlBanner" IsVisible="False"
+                        Background="#1F3A26" BorderBrush="#3AB36C" BorderThickness="1"
+                        CornerRadius="4" Padding="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="ℹ FOC-SQL-Modul wurde aktualisiert"
+                                   FontWeight="SemiBold" Foreground="#8AFFA9" />
+                        <TextBlock TextWrapping="Wrap" Foreground="#D2E5D6" FontSize="12"
+                                   Text="DTM zieht das neue FOC-SQL-Modul beim nächsten Start automatisch von der Samba-Quelle. Kein manueller Eingriff nötig." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Versionshistorie -->
+                <ItemsControl x:Name="NotesList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="v:NoteRow">
+                            <Border Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                                <StackPanel Spacing="6">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="{Binding DateLabel}"
+                                                   Foreground="{DynamicResource TextMutedBrush}"
+                                                   FontSize="11" VerticalAlignment="Bottom" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding Bullets}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="sys:String">
+                                                <Grid ColumnDefinitions="Auto,*" Margin="0,2,0,0">
+                                                    <TextBlock Grid.Column="0" Text="• " />
+                                                    <TextBlock Grid.Column="1" Text="{Binding}" TextWrapping="Wrap" FontSize="12" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                Padding="16,12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
                 <Button Content="Überspringen"        Click="OnSkip"  Width="120" />
                 <Button Content="Später (30 min)"     Click="OnLater" Width="120" />
                 <Button Content="Jetzt aktualisieren" Click="OnApply" Width="160" Classes="accent" />
             </StackPanel>
-        </StackPanel>
+        </Border>
     </Grid>
 
 </Window>

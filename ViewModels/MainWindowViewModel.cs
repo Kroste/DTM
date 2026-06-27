@@ -99,6 +99,26 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _data = data;
         _services = services;
         BuildRootNodes(servers);
+        DTM.Data.Terminal.TerminalBus.LineEmitted += OnTerminalLineEmitted;
+    }
+
+    // Phase 7.3: VERSION_MISMATCH-Pattern aus dem pwsh-Stream spiegeln. FOC-SQL
+    // wirft das, sobald das MSSQL-Modul auf dem Zielserver zu alt ist — der User
+    // sieht es sofort im StatusBar statt nur tief im pwsh-Log.
+    // Format: "VERSION_MISMATCH: MSSQL-Modul auf 'HOSTNAME' (gefunden: x.y.z) ...".
+    private static readonly System.Text.RegularExpressions.Regex _versionMismatchRx =
+        new(@"VERSION_MISMATCH:.*'(?<host>[^']+)'.*gefunden:\s*(?<found>[^)\s]+)",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private void OnTerminalLineEmitted(object? sender, DTM.Data.Terminal.TerminalLineEventArgs e)
+    {
+        if (string.IsNullOrEmpty(e.Line) || e.Line.IndexOf("VERSION_MISMATCH", StringComparison.Ordinal) < 0)
+            return;
+        var m = _versionMismatchRx.Match(e.Line);
+        string text = m.Success
+            ? $"⚠ MSSQL-Modul auf '{m.Groups["host"].Value}' veraltet ({m.Groups["found"].Value}). Bitte PS-Sitzung auf dem Server oeffnen."
+            : "⚠ MSSQL-Versionskonflikt — siehe pwsh-Tab.";
+        Dispatcher.UIThread.Post(() => StatusBar = text);
     }
 
     private void BuildRootNodes(IReadOnlyList<DB_SERVER> servers)
@@ -609,8 +629,10 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Window? owner = GetMainWindow();
         if (owner is null) return;
 
-        var dlg = new UpdatePromptWindow(newVersion.ToString(),
-                                         DTM.Updater.UpdateService.CurrentVersion().ToString(3));
+        var current = DTM.Updater.UpdateService.CurrentVersion();
+        var notes = await DTM.Updater.UpdateService.LoadReleaseNotesAsync(updateSource, current, newVersion);
+
+        var dlg = new UpdatePromptWindow(newVersion.ToString(), current.ToString(3), notes);
         await dlg.ShowDialog(owner);
 
         switch (dlg.Result)

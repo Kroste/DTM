@@ -245,6 +245,27 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
   aber 2 vergessen → `BackupBrowserService` warf „Modul nicht geladen" obwohl
   die `.psm1` korrekt war.
 
+- **MSSQL-Modul-Versionen synchron halten (Phase 7.2):** Sobald `MSSQL.psm1`
+  geändert wird, müssen **vier** Stellen synchron gehoben werden — sonst läuft
+  FOC-SQL nach dem Rollout in seine eigene `VERSION_MISMATCH`-Exception und
+  blockiert sämtliche MSSQL-Aufrufe (Backup, Snapshot, Wartung, Restore):
+  1. `Module/MSSQL/MSSQL.psm1` — neue Funktion / geänderte Signatur
+  2. `Module/MSSQL/MSSQL.psd1` — `ModuleVersion` **und** `FunctionsToExport`
+  3. `Module/MSSQL_ToExport.ps1` — Generator-Script
+  4. `Module/FOC-SQL/FOC-SQL.psm1` — `$script:RequiredMssqlVersion` auf die
+     neue Mindestversion ziehen. FOC-SQL prüft diese vor jedem MSSQL-Aufruf
+     im zentralen Helper `Invoke-MssqlServerScript` und wirft
+     `VERSION_MISMATCH: MSSQL-Modul auf '<Host>' (gefunden: x.y.z) …`,
+     wenn der Zielserver noch das alte Modul hat. DTM spiegelt dieses
+     Pattern in den Statusbar — der User sieht direkt, welcher Server
+     einmalig eine PowerShell-Sitzung braucht (Profil-Skript zieht das neue
+     MSSQL-Modul automatisch nach).
+
+  Release-Hinweis-Eintrag in `release-notes.json` mit `"modulesChanged":
+  ["MSSQL"]` setzen — DTM zeigt im `UpdatePromptWindow` dann den roten
+  „MSSQL-Modul wurde geändert"-Banner und der User weiss, dass jeder
+  Server einmal angefasst werden muss.
+
 ---
 
 ## Projektspezifische Realität & offene Migrationen
@@ -462,7 +483,64 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
       eine spürbare Latenz, der Refactor löst nur eine reine Code-Eleganz-Frage
       (Logik-Duplikation). Trade-off zugunsten Performance. — `L`
 
-#### Phase 7 — Erweiterte Stats & Transaktions-Management (Future)
+#### Phase 7 — Update-Kommunikation & Versions-Konsistenz (`v2.1.0`)
+
+Zwei zusammenhängende Themen rund um „Was muss der User wissen, wenn DTM ein
+Update ausliefert?" Hintergrund: das FOC-SQL-Modul wird beim Client durch
+DTM automatisch von Samba gezogen, das MSSQL-Modul auf den Servern aber
+**nicht** — dort sync't das User-PS-Profil, was eine einmalige PowerShell-
+Aktion pro Server bedeutet.
+
+- [x] **7.1** `release-notes.json` im Rollout-Verzeichnis (gepflegt im
+      DTM-Repo) — pro Release ein Eintrag mit Notes-Liste und
+      `modulesChanged`-Tags (`"FOC-SQL"` und/oder `"MSSQL"`).
+      `UpdateService.LoadReleaseNotesAsync` liest die Datei beim Check;
+      `UpdatePromptWindow` zeigt alle Einträge strikt zwischen aktueller
+      und Ziel-Version. Roter Banner bei `"MSSQL"` (Server-Aktion nötig),
+      grüner Hinweis bei `"FOC-SQL"` (Client-Sync automatisch). — `M`
+      _(erledigt: `Data/Updater/ReleaseNote.cs` POCO,
+      `UpdateService.LoadReleaseNotesAsync` mit Range-Filter
+      `current < v <= newVersion` + Sortierung absteigend,
+      `release-notes.json` im Repo-Root + csproj `CopyToOutputDirectory`,
+      `UpdatePromptWindow.axaml` mit ScrollViewer, MSSQL-/FOC-SQL-Banner
+      und ItemsControl-Notes-Liste. Initial-Eintrag v2.1.0 mit
+      `modulesChanged: ["FOC-SQL"]`. Tests:
+      `LoadReleaseNotesAsync_FiltersByRange_AndSortsDescending` +
+      `LoadReleaseNotesAsync_ReturnsEmpty_WhenFileMissing`.)_
+- [x] **7.2** 📦 FOC-SQL Versions-Konsistenz-Check Backend:
+      `$script:RequiredMssqlVersion = [Version]'1.3.4'` als Modul-
+      Konstante + neuer interner Helper `Invoke-MssqlServerScript`
+      (PSSession + Credential + Versions-Check + Import-Module +
+      User-ScriptBlock). Alle 8 MSSQL-Wrapper auf den Helper umgestellt
+      (kein Inline-Dupe). Bei MSSQL-Modul-Version < RequiredMssqlVersion
+      wirft der Helper eine klare `VERSION_MISMATCH:`-Exception mit
+      Server-Name und Aufforderung. — `M`
+      _(erledigt: FOC-SQL `4a45b47`. Helper wird intern verwendet —
+      kein Export nötig, also keine Drei-Punkt-Checkliste-Pflege für
+      `Invoke-MssqlServerScript` selbst. Refactored:
+      `Close-DbSessions-MSSQL`, `Get-DbBackups-MSSQL`, `Invoke-DbRestore`,
+      `Invoke-DbMaintenance`, `Set-DbRecoveryMode`, `Set-DbQueryStore`,
+      `Set-DbPageVerify`, `Reset-DbCompatibility`. Aeltere Legacy-Wrapper
+      (`Backup-Database`, `Set-Snapshot`, `Restore-Snapshot-MSSQL`,
+      `Get-DatabaseStats-MSSQL`, `Copy-Database-ToSamba-MSSQL`) noch nicht
+      auf den Helper umgezogen — eigener Refactor-Posten, falls
+      VERSION_MISMATCH dort auch noch sauber gemeldet werden soll.)_
+- [x] **7.3** DTM-Status-Bar-Spiegelung: `TerminalBus` exposed ein
+      Output-Observable, das jede pwsh-Tab-Zeile durchreicht.
+      `MainWindowViewModel` matched auf `VERSION_MISMATCH:`-Pattern und
+      zeigt den Hinweis kompakt in der Statusleiste. — `S`
+      _(erledigt: `TerminalBus.LineEmitted` (static event) + neues
+      `TerminalLineEventArgs`/`TerminalLineKind`-Paar; Bus hooked die
+      `OutputReceived`/`ErrorReceived` der jeweils registrierten Session.
+      `MainWindowViewModel` lauscht im Konstruktor und matched per
+      `Regex` auf `VERSION_MISMATCH:.*'(?<host>...)'.*gefunden:\s*(?<found>...)`
+      — Statusbar zeigt
+      `⚠ MSSQL-Modul auf '<Host>' veraltet (<Version>). Bitte PS-Sitzung
+      auf dem Server oeffnen.` Auto-Reset über die naechste regulaere
+      StatusBar-Setzung; Komplett-Banner mit Auto-Pre-Check beim DB-Wechsel
+      ist eigener Posten 7.4 / spaeter.)_
+
+#### Phase 8 — Erweiterte Stats & Transaktions-Management (Future)
 
 Lars-Idee aus dem v2.0.0-Test: ein eigener Button bzw. Dialog, der **mehr
 Stats** als das heutige Info-Card abruft (z. B. tatsächliche Buffer-Hit-

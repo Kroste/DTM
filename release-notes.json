@@ -1,0 +1,13 @@
+[
+  {
+    "version": "2.1.0",
+    "date": "2026-06-27",
+    "notes": [
+      "Update-Dialog zeigt jetzt eine Versionshistorie aller Releases zwischen aktueller und neuer Version (release-notes.json auf der Update-Quelle).",
+      "Wenn ein Release das MSSQL-Modul oder FOC-SQL ändert, erscheint im Dialog ein farbiger Banner mit Hinweis: rot für MSSQL (manueller Eingriff pro Server nötig), grün für FOC-SQL (DTM zieht das automatisch nach).",
+      "FOC-SQL: zentraler Helper Invoke-MssqlServerScript ersetzt die PSSession-Boilerplate in allen 8 MSSQL-Wrappern. Prüft vor jedem Aufruf die Mindestversion des MSSQL-Moduls auf dem Server — bei Mismatch wirft FOC-SQL VERSION_MISMATCH mit ComputerName und gefundener Version statt einer kryptischen Folgeexception.",
+      "DTM-Statusbar spiegelt VERSION_MISMATCH-Meldungen aus dem PowerShell-Terminal — du siehst sofort, welcher Server das MSSQL-Update braucht, ohne ins Terminal-Log scrollen zu müssen."
+    ],
+    "modulesChanged": ["FOC-SQL"]
+  }
+]

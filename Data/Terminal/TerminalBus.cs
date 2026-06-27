@@ -10,11 +10,22 @@ namespace DTM.Data.Terminal;
 /// führt den FOC-SQL-Modulaufruf aus, sodass der Output live im pwsh-Tab erscheint.
 /// Wenn kein pwsh-Tab läuft, wird der optionale onUnavailable-Fallback aufgerufen.
 /// </summary>
+public enum TerminalLineKind { Output, Error }
+
 public static class TerminalBus
 {
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private static readonly object _lock = new();
     private static ITerminalSession? _powerShellSession;
+
+    /// <summary>
+    /// Wird fuer jede Output-/Error-Zeile gefeuert, die durch die aktuell
+    /// registrierte Session laeuft. Erlaubt der UI (MainWindowViewModel),
+    /// nach bestimmten Patterns zu lauschen (z. B. VERSION_MISMATCH aus
+    /// FOC-SQL) und im StatusBar zu spiegeln, ohne dass der User das
+    /// pwsh-Log selbst durchscrollen muss.
+    /// </summary>
+    public static event EventHandler<TerminalLineEventArgs>? LineEmitted;
 
     /// <summary>
     /// Wird vom <c>ConsoleControl</c> aufgerufen, sobald eine PowerShell-Session
@@ -23,7 +34,17 @@ public static class TerminalBus
     /// </summary>
     public static void RegisterPowerShellSession(ITerminalSession session)
     {
-        lock (_lock) _powerShellSession = session;
+        lock (_lock)
+        {
+            if (_powerShellSession is { } old)
+            {
+                old.OutputReceived -= ForwardOutput;
+                old.ErrorReceived  -= ForwardError;
+            }
+            _powerShellSession = session;
+            session.OutputReceived += ForwardOutput;
+            session.ErrorReceived  += ForwardError;
+        }
         _logger.Debug("TerminalBus: PowerShell-Session registriert.");
     }
 
@@ -33,10 +54,20 @@ public static class TerminalBus
         lock (_lock)
         {
             if (ReferenceEquals(_powerShellSession, session))
+            {
+                session.OutputReceived -= ForwardOutput;
+                session.ErrorReceived  -= ForwardError;
                 _powerShellSession = null;
+            }
         }
         _logger.Debug("TerminalBus: PowerShell-Session deregistriert.");
     }
+
+    private static void ForwardOutput(object? _, string line)
+        => LineEmitted?.Invoke(null, new TerminalLineEventArgs(TerminalLineKind.Output, line));
+
+    private static void ForwardError(object? _, string line)
+        => LineEmitted?.Invoke(null, new TerminalLineEventArgs(TerminalLineKind.Error, line));
 
     /// <summary>Ob aktuell eine pwsh-Session zum Routen verfügbar ist.</summary>
     public static bool HasPowerShellSession
@@ -197,4 +228,15 @@ public static class TerminalBus
 public interface ITerminalBusInjector
 {
     void InjectNotice(string text);
+}
+
+public sealed class TerminalLineEventArgs : EventArgs
+{
+    public TerminalLineKind Kind { get; }
+    public string Line { get; }
+    public TerminalLineEventArgs(TerminalLineKind kind, string line)
+    {
+        Kind = kind;
+        Line = line;
+    }
 }

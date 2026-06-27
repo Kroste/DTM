@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 using NLog;
 using SystemFile = System.IO.File;
 
@@ -37,6 +38,44 @@ public static class UpdateService
     {
         string clean = (informationalVersion ?? string.Empty).Split('+')[0].Split('-')[0];
         return Version.TryParse(clean, out var v) ? v : new Version(1, 0, 0);
+    }
+
+    /// <summary>
+    /// Laedt <c>release-notes.json</c> von der Update-Quelle und filtert die
+    /// Eintraege im Bereich <c>(currentVersion, newVersion]</c> — also alle
+    /// Versionen, die der User noch nicht hat, bis einschliesslich der neuen.
+    /// Sortiert absteigend (neueste zuerst). Liefert leere Liste, wenn die
+    /// Datei fehlt oder unparsbar ist (kein harter Fehler — UI zeigt dann
+    /// nur die nackten Versionsnummern).
+    /// </summary>
+    public static async Task<IReadOnlyList<ReleaseNote>> LoadReleaseNotesAsync(
+        string updateSource, Version currentVersion, Version newVersion)
+    {
+        if (string.IsNullOrWhiteSpace(updateSource)) return Array.Empty<ReleaseNote>();
+        string notesFile = Path.Combine(updateSource, "release-notes.json");
+        if (!SystemFile.Exists(notesFile))
+        {
+            _logger.Debug("Keine release-notes.json gefunden unter {0}", notesFile);
+            return Array.Empty<ReleaseNote>();
+        }
+
+        try
+        {
+            await using var stream = SystemFile.OpenRead(notesFile);
+            var notes = await JsonSerializer.DeserializeAsync<List<ReleaseNote>>(stream,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (notes is null) return Array.Empty<ReleaseNote>();
+
+            return notes
+                .Where(n => Version.TryParse(n.Version, out var v) && v > currentVersion && v <= newVersion)
+                .OrderByDescending(n => Version.Parse(n.Version))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.Warn(ex, "release-notes.json konnte nicht gelesen werden.");
+            return Array.Empty<ReleaseNote>();
+        }
     }
 
     public static async Task<Version?> CheckForUpdateAsync(string updateSource)
