@@ -1,0 +1,111 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:DTM.ViewModels"
+        x:Class="DTM.Views.DbConfigurationWindow"
+        x:DataType="vm:DbConfigurationViewModel"
+        Title="DB-Konfiguration"
+        Width="540" Height="500"
+        MinWidth="460" MinHeight="440"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBgBrush}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Titelleiste -->
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                PointerPressed="OnTitleBarPointerPressed">
+            <Grid ColumnDefinitions="*,Auto" Height="36">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                            VerticalAlignment="Center" Margin="14,0"
+                            IsHitTestVisible="False">
+                    <TextBlock Text="&#x2699;" FontSize="13"
+                               Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="DB-Konfiguration" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Grid.Column="1" Classes="titleBtn close"
+                        Click="OnTitleClose" Content="&#x2715;" />
+            </Grid>
+        </Border>
+
+        <!-- Inhalt -->
+        <ScrollViewer Grid.Row="1" Padding="20,16,20,16">
+            <StackPanel Spacing="14">
+
+                <!-- Header: DB-Name -->
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Grid.Column="0" Classes="infoLabel" Text="Datenbank" />
+                    <TextBlock Grid.Column="1" Classes="infoValue"
+                               Text="{Binding DatabaseName}" FontWeight="Bold" />
+                </Grid>
+
+                <!-- Query-Store -->
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="14,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="groupLabel" Text="QUERY-STORE" Margin="0" />
+                        <TextBlock FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Sammelt Query-Plaene und Laufzeit-Statistiken in der DB selbst (sys.query_store_*). Nuetzlich fuer Performance-Analysen." />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <CheckBox Grid.Column="0" Content="Query-Store aktiviert"
+                                      IsChecked="{Binding QueryStoreOn, Mode=TwoWay}" />
+                            <Button Grid.Column="1" Content="Anwenden" Click="OnApplyQueryStore"
+                                    Classes="action" MinWidth="100" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Page-Verify -->
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="14,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="groupLabel" Text="PAGE-VERIFY" Margin="0" />
+                        <TextBlock FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Pruefmechanismus fuer Datenseiten. CHECKSUM ist Standard und empfohlen; NONE deaktiviert die Pruefung komplett (nur fuer alte DBs)." />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding PageVerifyOptions}"
+                                      SelectedItem="{Binding PageVerifySelected, Mode=TwoWay}"
+                                      MinWidth="200" HorizontalAlignment="Stretch" />
+                            <Button Grid.Column="1" Content="Anwenden" Click="OnApplyPageVerify"
+                                    Classes="action" MinWidth="100" Margin="10,0,0,0" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Compatibility -->
+                <Border Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                        CornerRadius="8" Padding="14,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Classes="groupLabel" Text="COMPATIBILITY-LEVEL" Margin="0" />
+                        <TextBlock FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="Reset auf den MASTER-DB-Default des SQL-Servers (z. B. 150 = SQL 2019, 160 = SQL 2022). Aenderung kann das Query-Verhalten beeinflussen." />
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                       FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}">
+                                <Run Text="Aktuell:" Foreground="{DynamicResource TextMutedBrush}" />
+                                <Run Text="{Binding CompatibilityLevel}" FontWeight="SemiBold" />
+                            </TextBlock>
+                            <Button Grid.Column="1" Content="Auf MASTER zuruecksetzen"
+                                    Click="OnResetCompatibility"
+                                    Classes="action danger" MinWidth="180" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Footer -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                    <Button Content="Schliessen" Click="OnCancel" MinWidth="100" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+
+</Window>

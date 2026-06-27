@@ -252,6 +252,13 @@
                                         <TextBlock Text="Shrink Log" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
+                                <Button Classes="action" Command="{Binding OpenDbConfigurationCommand}"
+                                        ToolTip.Tip="DB-Konfiguration: Query-Store, Page-Verify, Compatibility-Reset">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="glyph" Text="&#x2699;" />
+                                        <TextBlock Text="Konfiguration" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </StackPanel>
 

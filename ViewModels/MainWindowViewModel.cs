@@ -519,6 +519,35 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         RunSimpleAction("Invoke-DbMaintenance", db, "-ShrinkLog", "Shrink-Log");
     }
 
+    // DB-Konfiguration: Dialog mit Query-Store-Toggle, Page-Verify-Dropdown
+    // und Compatibility-Reset (Phase 5.1/5.3, MSSQL-only). Aktuelle Werte
+    // aus Database_Stats_MSSQL als Vorauswahl.
+    [RelayCommand]
+    private async Task OpenDbConfiguration()
+    {
+        if (SelectedNode is not DatabaseNodeViewModel db) return;
+        if (db.ServerTyp != DB_SERVER.ServerTyp.MSSQL) return;
+
+        Window? owner = GetMainWindow();
+        if (owner is null || _services is null) return;
+
+        DbConfigurationViewModel vm = _services.GetRequiredService<DbConfigurationViewModel>();
+        // Aktuelle Werte aus dem letzten ApplyStats-Lauf rekonstruieren (was im
+        // Info-Card sichtbar ist). Stats nicht neu abrufen — der User sieht ja
+        // die gleichen Werte, die er gerade angeschaut hat.
+        int currentCompat = int.TryParse(DbVersion, out int v) ? v : 0;
+        // PageVerify ist heute kein Property im VM — wir uebergeben null und
+        // lassen das ViewModel auf CHECKSUM-Default fallen, bis der User waehlt.
+        vm.Configure(
+            database: ModuleDatabaseId(db),
+            serverHost: ServerParamFor(db),
+            currentPageVerify: null,
+            currentCompatibility: currentCompat);
+
+        DbConfigurationWindow dlg = new() { DataContext = vm };
+        await dlg.ShowDialog(owner);
+    }
+
     // Backup-Browser: Dialog mit allen .bak-Dateien der selektierten MSSQL-DB,
     // mit Restore-Knopf (WITH REPLACE). MSSQL-only in v1.
     [RelayCommand]

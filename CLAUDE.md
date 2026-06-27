@@ -444,12 +444,34 @@ Zentrale Metadaten, damit nichts pro csproj wiederholt wird:
 
 #### Phase 5 — Optional / Niedrige Priorität
 
-- [ ] **5.1** Query-Store-Toggle (MSSQL). — `S` 📦
-- [ ] **5.2** SQL-Script-Runner-Dialog (`Database-Execute-SQL`/`-GetSQL-File`). — `M` 📦
-- [ ] **5.3** `Database-Set-Page-Verify` / `Database-Set-Compatibility`. — `S` 📦
-- [ ] **5.4** Stats-Konsolidierung: ODBC-Stats durch `Get-DatabaseStats`
-      ablösen (Architektur-Refactor, beseitigt MSSQL-/Oracle-Logik-Duplikat
-      zwischen `Data/MSSQL_ODBC.cs`/`ORACLE_ODBC.cs` und dem PS-Modul). — `L`
+- [x] **5.1** Query-Store-Toggle (MSSQL). — `S` 📦
+      _(erledigt zusammen mit 5.3 als „DB-Konfiguration"-Dialog;
+      FOC-SQL `d9f9e50`, DTM-Pointer + UI im nächsten Commit.)_
+- [x] **5.2** SQL-Script-Runner-Dialog (`Database-Execute-SQL`/`-GetSQL-File`)
+      — **bewusst nicht umgesetzt** (skip). Begründung: unkontrolliert ausgeführte,
+      ggf. veraltete SQL-Scripts sind ein zu großes Sicherheits-Risiko, das den
+      Komfortgewinn nicht aufwiegt. — `M` 📦
+- [x] **5.3** `Database-Set-Page-Verify` / `Database-Set-Compatibility`. — `S` 📦
+      _(erledigt; FOC-SQL `d9f9e50`: `Set-DbQueryStore`, `Set-DbPageVerify`,
+      `Reset-DbCompatibility`. DTM: neuer `DbConfigurationWindow` mit drei
+      Sektionen + „Anwenden"-Buttons + Confirm-Dialogen, Button „Konfiguration"
+      in der WARTUNG-Action-Gruppe (MSSQL-only).)_
+- [x] **5.4** Stats-Konsolidierung: ODBC-Stats durch `Get-DatabaseStats` ablösen
+      — **bewusst nicht umgesetzt** (skip). Begründung: aktueller ODBC-Pfad
+      ist schnell und stabil; PS-Runspace-Aufruf bei jedem DB-Wechsel wäre
+      eine spürbare Latenz, der Refactor löst nur eine reine Code-Eleganz-Frage
+      (Logik-Duplikation). Trade-off zugunsten Performance. — `L`
+
+#### Phase 7 — Erweiterte Stats & Transaktions-Management (Future)
+
+Lars-Idee aus dem v2.0.0-Test: ein eigener Button bzw. Dialog, der **mehr
+Stats** als das heutige Info-Card abruft (z. B. tatsächliche Buffer-Hit-
+Ratio, aktuelle Lock-Waits, langlebige Sessions, **offene Transaktionen
+mit Kill-Möglichkeit**). MSSQL via `sys.dm_tran_active_transactions` +
+`sys.dm_exec_sessions`, Oracle via `v$transaction` + `v$session`. Idealerweise
+mit dem gleichen Pattern wie SessionsWindow: Liste + Pre-Kill-Confirm.
+
+Noch nicht geplant — separater Auftrag wenn relevant.
 
 #### Phase 6 — Multi-Server-Support (`L`, ein Breaking-Change-Block, **`v2.0.0`**)
 
