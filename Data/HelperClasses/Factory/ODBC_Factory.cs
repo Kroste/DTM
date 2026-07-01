@@ -11,39 +11,40 @@ namespace DTM
     {
         private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        private ODBC.IDTM_ODBC? _mssql_odbc;
-        private ODBC.IDTM_ODBC? _oracle_odbc;
+        // Cache-Key: "<Typ>::<Server>" case-insensitive. Mit Phase 6 (Multi-
+        // Server-Support) koennen pro Typ mehrere Hosts existieren — ein
+        // globaler Slot pro Typ (der frueher hier lag) hat jede zweite
+        // MSSQL-/Oracle-Instanz auf den ersten Server umgebogen: Bug 2
+        // "immer die gleichen DBs" und Bug 1 "keine Verbindung zum
+        // zweiten Server" waren beide dieser eine Cache-Bug.
+        private readonly Dictionary<string, ODBC.IDTM_ODBC> _cache =
+            new(StringComparer.OrdinalIgnoreCase);
 
         public ODBC.IDTM_ODBC? Get_DATA(string Name, ServerCredential credential)
         {
-            switch (Name)
+            string key = $"{Name}::{credential.Server}";
+            if (_cache.TryGetValue(key, out var existing))
             {
-                case "MSSQL":
-                    if (null == _mssql_odbc)
-                    {
-                        _logger.Debug("ODBC_Factory: Neue MSSQL-Instanz erstellt für Server {0}", credential.Server);
-                        _mssql_odbc = new MSSQL.MSSQL_ODBC(credential);
-                    }
-                    else
-                    {
-                        _logger.Debug("ODBC_Factory: Bestehende MSSQL-Instanz zurückgegeben.");
-                    }
-                    return _mssql_odbc;
-                case "ORACLE":
-                    if (null == _oracle_odbc)
-                    {
-                        _logger.Debug("ODBC_Factory: Neue ORACLE-Instanz erstellt für Server {0}", credential.Server);
-                        _oracle_odbc = new ORACLE.ORACLE_ODBC(credential);
-                    }
-                    else
-                    {
-                        _logger.Debug("ODBC_Factory: Bestehende ORACLE-Instanz zurückgegeben.");
-                    }
-                    return _oracle_odbc;
-                default:
-                    _logger.Warn("ODBC_Factory: Unbekannter Datenbanktyp '{0}'", Name);
-                    return null;
+                _logger.Debug("ODBC_Factory: Bestehende {0}-Instanz fuer '{1}' zurueckgegeben.", Name, credential.Server);
+                return existing;
             }
+
+            ODBC.IDTM_ODBC? instance = Name switch
+            {
+                "MSSQL"  => new MSSQL.MSSQL_ODBC(credential),
+                "ORACLE" => new ORACLE.ORACLE_ODBC(credential),
+                _        => null
+            };
+
+            if (instance is null)
+            {
+                _logger.Warn("ODBC_Factory: Unbekannter Datenbanktyp '{0}'", Name);
+                return null;
+            }
+
+            _cache[key] = instance;
+            _logger.Debug("ODBC_Factory: Neue {0}-Instanz erstellt fuer Server '{1}'.", Name, credential.Server);
+            return instance;
         }
     }
 }
