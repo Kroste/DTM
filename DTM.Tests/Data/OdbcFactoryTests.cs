@@ -44,6 +44,19 @@ public class OdbcFactoryTests
     }
 
     [Fact]
+    public void Get_DATA_TwoDifferentOracleServers_ReturnsDifferentInstances()
+    {
+        var factory = new ODBC_Factory();
+
+        var a = factory.Get_DATA("ORACLE", Cred("olvm-mgm.lhp.intern"));
+        var b = factory.Get_DATA("ORACLE", Cred("olvm-mgm.devlhp.intern"));
+
+        a.Should().NotBeNull();
+        b.Should().NotBeNull();
+        a.Should().NotBeSameAs(b);
+    }
+
+    [Fact]
     public void Get_DATA_MssqlAndOracleSameHost_ReturnsDifferentInstances()
     {
         var factory = new ODBC_Factory();
